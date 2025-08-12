@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -26,6 +27,7 @@ import {
   Bot,
   Table,
   HelpCircle,
+  ExternalLink,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { DocViewer } from '@/components/doc-viewer'
@@ -47,6 +49,36 @@ interface DataPanelProps {
   isCollapsed: boolean
   onToggleCollapse: () => void
   onShowDataView: (file: UploadedFile) => void
+}
+
+/** Simple Help/Docs links for in-app pages */
+function HelpLinks() {
+  const links = [
+    { label: 'Technical Documentation', href: '/docs/TECHNICAL_DOCUMENTATION', desc: 'Architecture, setup, and internals' },
+    { label: 'FAQ', href: '/docs/FAQ', desc: 'Common questions and quick fixes' },
+    { label: 'Roadmap', href: '/docs/ROADMAP', desc: 'What’s planned next' },
+    { label: 'User Guide', href: '/docs/USER_GUIDE', desc: 'How to use Nemo step by step' },
+  ]
+
+  return (
+    <div className="mt-3 space-y-2">
+      {links.map((l) => (
+        <Link
+          key={l.href}
+          href={l.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center justify-between rounded-md border px-3 py-2 hover:bg-muted"
+        >
+          <div className="flex flex-col">
+            <span className="text-sm">{l.label}</span>
+            {l.desc && <span className="text-xs text-muted-foreground">{l.desc}</span>}
+          </div>
+          <ExternalLink className="h-4 w-4 opacity-70" />
+        </Link>
+      ))}
+    </div>
+  )
 }
 
 export function DataPanel({
@@ -71,6 +103,16 @@ export function DataPanel({
     return false
   })
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Listen once for "open-doc" custom events (if you still use DocViewer buttons anywhere)
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { name: string; title: string }
+      if (detail?.name) openDoc(detail.name, detail.title || detail.name)
+    }
+    window.addEventListener('open-doc', handler)
+    return () => window.removeEventListener('open-doc', handler)
+  }, [])
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault()
@@ -210,20 +252,23 @@ export function DataPanel({
             <Button variant="ghost" size="sm" className="w-8 h-8 p-0" title="Settings">
               <Settings className="h-4 w-4" />
             </Button>
+
+            {/* Collapsed Help */}
             <Dialog open={isHelpOpen} onOpenChange={setIsHelpOpen}>
               <DialogTrigger asChild>
                 <Button variant="ghost" size="sm" className="w-8 h-8 p-0" title="Help & Documentation">
                   <HelpCircle className="h-4 w-4" />
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[500px]">
+              <DialogContent className="sm:max-w-[520px] pointer-events-auto">
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-2">
                     <HelpCircle className="h-5 w-5" />
                     Help & Documentation
                   </DialogTitle>
-                  <DialogDescription>Access comprehensive documentation and guides for using Nemo effectively.</DialogDescription>
+                  <DialogDescription>Open full-width docs in a new tab.</DialogDescription>
                 </DialogHeader>
+                <HelpLinks />
               </DialogContent>
             </Dialog>
           </div>
@@ -248,54 +293,53 @@ export function DataPanel({
             <Button variant="ghost" size="sm" className="w-8 h-8 p-0" title="Settings">
               <Settings className="h-4 w-4" />
             </Button>
+
+            {/* Expanded Help */}
             <Dialog open={isHelpOpen} onOpenChange={setIsHelpOpen}>
               <DialogTrigger asChild>
                 <Button variant="ghost" size="sm" className="w-8 h-8 p-0" title="Help & Documentation">
                   <HelpCircle className="h-4 w-4" />
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[500px]">
+              <DialogContent className="sm:max-w-[520px] pointer-events-auto">
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-2">
                     <HelpCircle className="h-5 w-5" />
                     Help & Documentation
                   </DialogTitle>
-                  <DialogDescription>Access comprehensive documentation and guides for using Nemo effectively.</DialogDescription>
+                  <DialogDescription>Open full-width docs in a new tab.</DialogDescription>
                 </DialogHeader>
+                <HelpLinks />
               </DialogContent>
             </Dialog>
+
             <Button variant="ghost" size="sm" onClick={onToggleCollapse} className="w-8 h-8 p-0" title="Collapse panel">
               <Menu className="h-4 w-4" />
             </Button>
           </div>
         </div>
 
-      {/* Uploader (smaller, centered, no icon) */}
-<div className="flex justify-center">
-  <div
-    className={`w-[240px] h-[80px] rounded-lg border-2 border-dashed p-3 transition-colors flex flex-col justify-center ${
-      isDragging ? 'border-primary bg-primary/5' : 'border-muted-foreground/25'
-    }`}
-    onDragOver={handleDragOver}
-    onDragLeave={handleDragLeave}
-    onDrop={handleDrop}
-  >
-    <div className="text-center">
-      <p className="text-xs text-muted-foreground mb-1">
-      </p>
-      <Button
-        onClick={() => fileInputRef.current?.click()}
-        variant="outline"
-        size="sm"
-      >
-        Browse Files
-      </Button>
-      <p className="text-[11px] text-muted-foreground mt-1">
-        Supports CSV, JSON, Excel files
-      </p>
-    </div>
-  </div>
-</div>
+        {/* Uploader (smaller, centered, no icon) */}
+        <div className="flex justify-center">
+          <div
+            className={`w-[240px] h-[80px] rounded-lg border-2 border-dashed p-3 transition-colors flex flex-col justify-center ${
+              isDragging ? 'border-primary bg-primary/5' : 'border-muted-foreground/25'
+            }`}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+          >
+            <div className="text-center">
+              <p className="text-xs text-muted-foreground mb-1"></p>
+              <Button onClick={() => fileInputRef.current?.click()} variant="outline" size="sm">
+                Browse Files
+              </Button>
+              <p className="text-[11px] text-muted-foreground mt-1">
+                Supports CSV, JSON, Excel files
+              </p>
+            </div>
+          </div>
+        </div>
         <input
           ref={fileInputRef}
           type="file"
@@ -388,12 +432,10 @@ export function DataPanel({
               )}
             </ScrollArea>
           </TabsContent>
-
-          {/* Keep other tab components out of this sidebar for now (hidden). */}
         </Tabs>
       </div>
 
-      {/* Docs modal */}
+      {/* Docs modal (kept for your internal DocViewer flow if you use it elsewhere) */}
       <DocViewer
         isOpen={!!currentDoc}
         onClose={() => setCurrentDoc(null)}

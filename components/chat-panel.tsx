@@ -247,20 +247,8 @@ What would you like to know about your data?`,
 
   return (
     <div className="h-full flex flex-col">
-      <div className="p-6 border-b">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold flex items-center gap-2">
-            <MessageSquare className="h-5 w-5" />
-            AI Data Analysis Chat
-          </h2>
-          <div className="flex items-center gap-3">
-            {selectedFile && (
-              <Badge variant="outline" className="flex items-center gap-1">
-                <BarChart3 className="h-3 w-3" />
-                {selectedFile.name}
-              </Badge>
-            )}
-            
+      <div className="p-2 border-b">
+        <div className="flex items-center justify-between"><div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
               <Select value={selectedModel} onValueChange={handleModelChange}>
                 <SelectTrigger className="w-48">
@@ -342,7 +330,7 @@ What would you like to know about your data?`,
       </div>
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        <ScrollArea ref={scrollAreaRef} className="flex-1 p-6">
+        <ScrollArea ref={scrollAreaRef} className="flex-1 p-2">
           {!selectedFile && (
             <div className="h-full flex items-center justify-center">
               <div className="text-center">
@@ -406,7 +394,7 @@ What would you like to know about your data?`,
               </div>
 
               {isLoading && (
-                <div className="flex gap-3 justify-start mt-4">
+                <div className="flex gap-3 justify-start mt-2">
                   <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
                     <Bot className="h-4 w-4" />
                   </div>
@@ -424,7 +412,7 @@ What would you like to know about your data?`,
         </ScrollArea>
 
         {selectedFile && (
-          <div className="p-4 border-t">
+          <div className="p-2 border-t">
             <div className="flex gap-2">
               <Textarea
                 ref={textareaRef}
@@ -443,10 +431,7 @@ What would you like to know about your data?`,
               >
                 <Send className="h-4 w-4" />
               </Button>
-            </div>
-            <div className="text-xs text-muted-foreground mt-2">
-            </div>
-          </div>
+            </div></div>
         )}
       </div>
     </div>
