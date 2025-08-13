@@ -461,7 +461,7 @@ export function DataPanel({
           >
             <div className="text-center">
               <p className="text-xs text-muted-foreground mb-1"></p>
-              <Button onClick={() => fileInputRef.current?.click()} variant="outline" size="sm">
+              <Button onClick={handleFileSelect} variant="outline" size="sm">
                 Browse Files
               </Button>
               <p className="text-[11px] text-muted-foreground mt-1">
