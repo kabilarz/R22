@@ -475,7 +475,7 @@ export function DataPanel({
           type="file"
           multiple
           accept=".csv,.json,.xlsx,.xls"
-          onChange={handleFileSelect}
+          onChange={handleBrowserFileSelect}
           className="hidden"
         />
       </div>
