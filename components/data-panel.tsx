@@ -278,20 +278,28 @@ export function DataPanel({
     }
   }
 
+  const parseFileContent = (content: string, fileName: string): any[] => {
+    try {
+      if (fileName.endsWith('.json')) {
+        const jsonData = JSON.parse(content)
+        return Array.isArray(jsonData) ? jsonData : [jsonData]
+      } else if (fileName.endsWith('.csv')) {
+        return parseCSV(content)
+      } else {
+        throw new Error('Unsupported file format for content parsing')
+      }
+    } catch (err) {
+      throw new Error(`Failed to parse ${fileName}: ${err}`)
+    }
+  }
+
   const parseFile = (file: File): Promise<any[]> =>
     new Promise((resolve, reject) => {
       const reader = new FileReader()
       reader.onload = (e) => {
         try {
           const content = e.target?.result as string
-          if (file.name.endsWith('.json')) {
-            const jsonData = JSON.parse(content)
-            resolve(Array.isArray(jsonData) ? jsonData : [jsonData])
-          } else if (file.name.endsWith('.csv')) {
-            resolve(parseCSV(content))
-          } else {
-            reject(new Error('Unsupported file format'))
-          }
+          resolve(parseFileContent(content, file.name))
         } catch (err) {
           reject(err)
         }
