@@ -77,10 +77,10 @@ export function MarkdownRenderer({ content, onRunCode }: MarkdownRendererProps) 
                     </Button>
                   )}
                 </div>
-                <SyntaxHighlighter as={ReactMarkdown.Components['code']}
-                  style={oneDark}
-                  language={language}
-                  PreTag="div"
+                {React.createElement(SyntaxHighlighter as any, {
+                  style: oneDark,
+                  language: language,
+                  PreTag: "div",
                   customStyle={{
                     margin: 0,
                     borderRadius: '6px',
