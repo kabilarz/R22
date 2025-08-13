@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "db:studio": "prisma studio",
-    "db:seed": "prisma db seed"
+    "db:seed": "prisma db seed",
+    "tauri": "tauri dev",
+    "tauri:build": "tauri build"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
