@@ -82,7 +82,7 @@ export function MarkdownRenderer({ content, onRunCode }: MarkdownRendererProps) 
                   style: oneDark,
                   language: language,
                   PreTag: "div",
-                  customStyle={{
+                  customStyle: {
                     margin: 0,
                     borderRadius: '6px',
                     fontSize: '13px',
