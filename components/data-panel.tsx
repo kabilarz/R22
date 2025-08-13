@@ -150,9 +150,93 @@ export function DataPanel({
     processFiles(files)
   }
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async () => {
+    // Check if we're running in Tauri
+    if (tauriApis.open) {
+      try {
+        const selected = await tauriApis.open({
+          filters: [
+            {
+              name: 'Data Files',
+              extensions: ['csv', 'json', 'xlsx', 'xls']
+            }
+          ],
+          multiple: true
+        })
+        
+        if (selected) {
+          const filePaths = Array.isArray(selected) ? selected : [selected]
+          await processFilePaths(filePaths)
+        }
+      } catch (error) {
+        toast.error('Failed to open file dialog')
+        console.error('File dialog error:', error)
+      }
+    } else {
+      // Fallback to browser file input for development
+      fileInputRef.current?.click()
+    }
+  }
+
+  const handleBrowserFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
     processFiles(files)
+  }
+
+  const processFilePaths = async (filePaths: string[]) => {
+    if (!isBackendReady) {
+      toast.error('Backend is not ready. Please wait for initialization.')
+      return
+    }
+
+    for (const filePath of filePaths) {
+      const fileName = filePath.split(/[\/\\]/).pop() || 'unknown'
+      
+      if (!fileName.match(/\.(csv|json|xlsx|xls)$/i)) {
+        toast.error(`Unsupported file type: ${fileName}`)
+        continue
+      }
+
+      try {
+        // Read file content using Tauri
+        let fileContent: string
+        let fileSize = 0
+        
+        if (tauriApis.readTextFile) {
+          fileContent = await tauriApis.readTextFile(filePath)
+          fileSize = fileContent.length
+        } else {
+          throw new Error('Tauri file system not available')
+        }
+
+        // Create a File-like object for the backend
+        const blob = new Blob([fileContent], { type: getFileTypeFromExtension(fileName) })
+        const file = new File([blob], fileName, { type: getFileTypeFromExtension(fileName) })
+
+        // Upload to backend
+        const backendResult = await apiClient.uploadDataset(file)
+        
+        // Parse locally for immediate display
+        const data = await parseFileContent(fileContent, fileName)
+        
+        const uploadedFile: UploadedFile = {
+          id: Date.now().toString() + Math.random(),
+          name: fileName,
+          type: getFileTypeFromExtension(fileName),
+          size: fileSize,
+          data,
+          uploadedAt: new Date(),
+          dataset_id: backendResult.dataset_id,
+        }
+
+        setUploadedFiles((prev: UploadedFile[]) => [...prev, uploadedFile])
+        toast.success(`File ${fileName} uploaded successfully`)
+      } catch (error) {
+        toast.error(
+          `Failed to process ${fileName}: ${error instanceof Error ? error.message : 'Unknown error'}`
+        )
+      }
+    }
   }
 
   const processFiles = async (files: File[]) => {
