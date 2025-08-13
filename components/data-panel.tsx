@@ -31,6 +31,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { DocViewer } from '@/components/doc-viewer'
+import { apiClient } from '@/lib/api'
 
 interface UploadedFile {
   id: string
@@ -39,6 +40,7 @@ interface UploadedFile {
   size: number
   data: any[]
   uploadedAt: Date
+  dataset_id?: string  // Add backend dataset ID
 }
 
 interface DataPanelProps {
@@ -49,6 +51,8 @@ interface DataPanelProps {
   isCollapsed: boolean
   onToggleCollapse: () => void
   onShowDataView: (file: UploadedFile) => void
+  currentChatId: string
+  isBackendReady: boolean
 }
 
 /** Simple Help/Docs links for in-app pages */
@@ -89,6 +93,8 @@ export function DataPanel({
   isCollapsed,
   onToggleCollapse,
   onShowDataView,
+  currentChatId,
+  isBackendReady,
 }: DataPanelProps) {
   const [isDragging, setIsDragging] = useState(false)
   const [isHelpOpen, setIsHelpOpen] = useState(false)
@@ -137,6 +143,11 @@ export function DataPanel({
   }
 
   const processFiles = async (files: File[]) => {
+    if (!isBackendReady) {
+      toast.error('Backend is not ready. Please wait for initialization.')
+      return
+    }
+
     for (const file of files) {
       if (!file.name.match(/\.(csv|json|xlsx|xls)$/i)) {
         toast.error(`Unsupported file type: ${file.name}`)
@@ -144,7 +155,12 @@ export function DataPanel({
       }
 
       try {
+        // Upload to backend first
+        const backendResult = await apiClient.uploadDataset(file)
+        
+        // Also parse locally for immediate display
         const data = await parseFile(file)
+        
         const uploadedFile: UploadedFile = {
           id: Date.now().toString() + Math.random(),
           name: file.name,
@@ -152,6 +168,7 @@ export function DataPanel({
           size: file.size,
           data,
           uploadedAt: new Date(),
+          dataset_id: backendResult.dataset_id, // Store backend dataset ID
         }
 
         setUploadedFiles((prev: UploadedFile[]) => [...prev, uploadedFile])

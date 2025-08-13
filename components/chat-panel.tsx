@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { MarkdownRenderer } from '@/components/markdown-renderer'
+import { apiClient } from '@/lib/api'
 
 interface UploadedFile {
   id: string
@@ -21,6 +22,7 @@ interface UploadedFile {
   size: number
   data: any[]
   uploadedAt: Date
+  dataset_id?: string  // Add backend dataset ID
 }
 
 interface Message {
@@ -33,9 +35,11 @@ interface Message {
 
 interface ChatPanelProps {
   selectedFile: UploadedFile | null
+  currentChatId: string
+  isBackendReady: boolean
 }
 
-export function ChatPanel({ selectedFile }: ChatPanelProps) {
+export function ChatPanel({ selectedFile, currentChatId, isBackendReady }: ChatPanelProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const [inputMessage, setInputMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -45,6 +49,12 @@ export function ChatPanel({ selectedFile }: ChatPanelProps) {
   const [isConfigOpen, setIsConfigOpen] = useState(false)
   const [pythonOutput, setPythonOutput] = useState<string | null>(null)
   const [isExecutingCode, setIsExecutingCode] = useState(false)
+  const [showTTestDialog, setShowTTestDialog] = useState(false)
+  const [tTestParams, setTTestParams] = useState({
+    groupCol: '',
+    valueCol: '',
+    whereSql: ''
+  })
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -73,6 +83,10 @@ export function ChatPanel({ selectedFile }: ChatPanelProps) {
 • "Can you summarize the key statistics?"
 • "Show me a breakdown by category"
 • "What insights can you find?"
+
+**Statistical Analysis Tools:**
+• Click the "Run t-test" button below to perform statistical comparisons
+• Use the Python sandbox for custom analysis
 
 What would you like to know about your data?`,
         timestamp: new Date(),
@@ -210,6 +224,88 @@ What would you like to know about your data?`,
     } finally {
       setIsExecutingCode(false)
     }
+  }
+
+  const handleRunTTest = async () => {
+    if (!selectedFile || !selectedFile.dataset_id || !currentChatId || !isBackendReady) {
+      toast.error('Backend is not ready or file not properly uploaded')
+      return
+    }
+
+    if (!tTestParams.groupCol || !tTestParams.valueCol) {
+      toast.error('Please select both group and value columns')
+      return
+    }
+
+    try {
+      setIsLoading(true)
+      
+      const result = await apiClient.runTTest(
+        currentChatId,
+        selectedFile.dataset_id,
+        tTestParams.groupCol,
+        tTestParams.valueCol,
+        tTestParams.whereSql || undefined
+      )
+
+      // Format the results as a message
+      let resultContent = `## T-Test Results\n\n`
+      
+      if (result.error) {
+        resultContent += `**Error:** ${result.error}\n\n`
+      }
+      
+      resultContent += `**Analysis Details:**\n`
+      resultContent += `- Group Column: ${tTestParams.groupCol}\n`
+      resultContent += `- Value Column: ${tTestParams.valueCol}\n\n`
+      
+      resultContent += `**Sample Sizes:**\n`
+      resultContent += `- Group 1 (Male): ${result.n_male}\n`
+      resultContent += `- Group 2 (Female): ${result.n_female}\n\n`
+      
+      if (result.mean_male !== null && result.mean_female !== null) {
+        resultContent += `**Group Means:**\n`
+        resultContent += `- Male Mean: ${result.mean_male.toFixed(4)}\n`
+        resultContent += `- Female Mean: ${result.mean_female.toFixed(4)}\n\n`
+      }
+      
+      if (result.levene_p !== null && result.t_stat !== null && result.p_value !== null) {
+        resultContent += `**Statistical Test Results:**\n`
+        resultContent += `- Levene's Test p-value: ${result.levene_p.toFixed(6)}\n`
+        resultContent += `- Equal variances assumed: ${result.equal_var_assumed ? 'Yes' : 'No'}\n`
+        resultContent += `- t-statistic: ${result.t_stat.toFixed(4)}\n`
+        resultContent += `- p-value: ${result.p_value.toFixed(6)}\n\n`
+        
+        resultContent += `**Interpretation:**\n`
+        if (result.p_value < 0.05) {
+          resultContent += `- The difference between groups is **statistically significant** (p < 0.05)\n`
+        } else {
+          resultContent += `- The difference between groups is **not statistically significant** (p ≥ 0.05)\n`
+        }
+      }
+
+      const assistantMessage: Message = {
+        id: Date.now().toString(),
+        type: 'assistant',
+        content: resultContent,
+        timestamp: new Date(),
+        fileContext: selectedFile.name
+      }
+
+      setMessages(prev => [...prev, assistantMessage])
+      setShowTTestDialog(false)
+      toast.success('T-test completed successfully')
+      
+    } catch (error) {
+      toast.error(`Failed to run t-test: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const getAvailableColumns = () => {
+    if (!selectedFile || selectedFile.data.length === 0) return []
+    return Object.keys(selectedFile.data[0])
   }
 
   const getDataPreview = () => {
@@ -413,6 +509,86 @@ What would you like to know about your data?`,
 
         {selectedFile && (
           <div className="p-2 border-t">
+            <div className="flex gap-2 mb-2">
+              <Dialog open={showTTestDialog} onOpenChange={setShowTTestDialog}>
+                <DialogTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    disabled={!isBackendReady || !selectedFile?.dataset_id}
+                    className="text-xs"
+                  >
+                    Run t-test
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle>Configure t-test Analysis</DialogTitle>
+                    <DialogDescription>
+                      Select columns to compare groups in your dataset.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="group-col" className="text-right">
+                        Group Column
+                      </Label>
+                      <Select 
+                        value={tTestParams.groupCol} 
+                        onValueChange={(value) => setTTestParams(prev => ({ ...prev, groupCol: value }))}
+                      >
+                        <SelectTrigger className="col-span-3">
+                          <SelectValue placeholder="Select grouping column (e.g., gender)" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {getAvailableColumns().map(col => (
+                            <SelectItem key={col} value={col}>{col}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="value-col" className="text-right">
+                        Value Column
+                      </Label>
+                      <Select 
+                        value={tTestParams.valueCol} 
+                        onValueChange={(value) => setTTestParams(prev => ({ ...prev, valueCol: value }))}
+                      >
+                        <SelectTrigger className="col-span-3">
+                          <SelectValue placeholder="Select value column (e.g., BMI)" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {getAvailableColumns().map(col => (
+                            <SelectItem key={col} value={col}>{col}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="where-sql" className="text-right">
+                        Filter (SQL)
+                      </Label>
+                      <Input
+                        id="where-sql"
+                        placeholder="Optional WHERE clause"
+                        value={tTestParams.whereSql}
+                        onChange={(e) => setTTestParams(prev => ({ ...prev, whereSql: e.target.value }))}
+                        className="col-span-3"
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button 
+                      onClick={handleRunTTest}
+                      disabled={!tTestParams.groupCol || !tTestParams.valueCol || isLoading}
+                    >
+                      {isLoading ? 'Running...' : 'Run t-test'}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
             <div className="flex gap-2">
               <Textarea
                 ref={textareaRef}
