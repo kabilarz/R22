@@ -10,7 +10,7 @@ function stripMdToc(md: string) {
   const lines = md.split("\n");
   const isTocHeading = (line: string) =>
     /^#{1,6}\s*/.test(line) &&
-    /table\s*of\s*contents/i.test(line.replace(/[\u{1F300}-\u{1FAFF}]/gu, ""));
+    /table\s*of\s*contents/i.test(line.replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, ""));
   let start = -1;
   for (let i = 0; i < lines.length; i++) if (isTocHeading(lines[i])) { start = i; break; }
   if (start === -1) return md;
