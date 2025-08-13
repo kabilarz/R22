@@ -33,6 +33,19 @@ import { toast } from 'sonner'
 import { DocViewer } from '@/components/doc-viewer'
 import { apiClient } from '@/lib/api'
 
+// Tauri imports - handle potential environment differences
+let tauriApis: any = {}
+if (typeof window !== 'undefined') {
+  try {
+    tauriApis = {
+      open: require('@tauri-apps/plugin-dialog').open,
+      readTextFile: require('@tauri-apps/plugin-fs').readTextFile,
+    }
+  } catch (error) {
+    console.log('Tauri APIs not available, running in browser mode')
+  }
+}
+
 interface UploadedFile {
   id: string
   name: string
