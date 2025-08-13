@@ -146,8 +146,16 @@ export function DataPanel({
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault()
     setIsDragging(false)
-    const files = Array.from(e.dataTransfer.files)
-    processFiles(files)
+    
+    // In Tauri, drag and drop works differently
+    // For now, we'll show a message to use the file browser
+    if (tauriApis.open) {
+      toast.info('Please use the "Browse Files" button to select files in desktop mode')
+    } else {
+      // Browser mode - handle normally
+      const files = Array.from(e.dataTransfer.files)
+      processFiles(files)
+    }
   }
 
   const handleFileSelect = async () => {
