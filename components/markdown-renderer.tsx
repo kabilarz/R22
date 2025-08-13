@@ -87,11 +87,9 @@ export function MarkdownRenderer({ content, onRunCode }: MarkdownRendererProps) 
                     borderRadius: '6px',
                     fontSize: '13px',
                     lineHeight: '1.4'
-                  }}
-                  {...props}
-                >
-                  {code}
-                </SyntaxHighlighter>
+                  },
+                  ...props
+                }, code)}
               </div>
             )
           },
