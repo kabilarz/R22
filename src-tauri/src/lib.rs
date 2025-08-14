@@ -13,7 +13,8 @@ pub fn run() {
       ollama::download_model,
       ollama::query_ollama,
       ollama::list_installed_models,
-      ollama::get_model_recommendations
+      ollama::get_model_recommendations,
+      ollama::setup_bundled_ollama
     ])
     .setup(|app| {
       if cfg!(debug_assertions) {

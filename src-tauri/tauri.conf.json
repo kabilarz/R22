@@ -38,6 +38,12 @@
     ],
     "category": "Productivity",
     "shortDescription": "AI-powered medical data analysis platform",
-    "longDescription": "Nemo is a desktop application for medical researchers to analyze datasets using natural language queries and local AI models. Built for privacy and offline operation."
+    "longDescription": "Nemo is a desktop application for medical researchers to analyze datasets using natural language queries and local AI models. Built for privacy and offline operation.",
+    "resources": [
+      "resources/ollama/*"
+    ],
+    "externalBin": [
+      "ollama/ollama"
+    ]
   }
 }

@@ -1,9 +1,12 @@
 use reqwest;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use std::env;
+use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use sysinfo::{System, SystemExt};
 use tauri::command;
+use tauri::{AppHandle, Manager};
 use tokio::time::{timeout, Duration};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -68,6 +71,21 @@ pub fn get_available_models() -> Vec<ModelInfo> {
     ]
 }
 
+fn get_bundled_ollama_path(app_handle: &AppHandle) -> Result<PathBuf, String> {
+    let resource_dir = app_handle
+        .path()
+        .resource_dir()
+        .map_err(|e| format!("Failed to get resource directory: {}", e))?;
+    
+    let ollama_binary = if cfg!(target_os = "windows") {
+        "ollama.exe"
+    } else {
+        "ollama"
+    };
+    
+    Ok(resource_dir.join("ollama").join(ollama_binary))
+}
+
 #[command]
 pub async fn get_hardware_info() -> Result<HardwareInfo, String> {
     let mut sys = System::new_all();
@@ -128,63 +146,93 @@ pub async fn check_ollama_status() -> Result<bool, String> {
 }
 
 #[command]
-pub async fn start_ollama() -> Result<String, String> {
+pub async fn start_ollama(app_handle: AppHandle) -> Result<String, String> {
     // Check if already running
     if check_ollama_status().await.unwrap_or(false) {
         return Ok("Ollama is already running".to_string());
     }
 
-    // Try to start Ollama
-    let result = if cfg!(target_os = "windows") {
-        Command::new("ollama")
-            .arg("serve")
-            .stdout(Stdio::null())
-            .stderr(Stdio::null())
-            .spawn()
-    } else {
-        Command::new("ollama")
-            .arg("serve")
-            .stdout(Stdio::null())
-            .stderr(Stdio::null())
-            .spawn()
-    };
+    // Try bundled Ollama first, then system Ollama
+    let ollama_commands = vec![
+        get_bundled_ollama_path(&app_handle),
+        Ok(PathBuf::from("ollama")), // System ollama
+    ];
 
-    match result {
-        Ok(_) => {
-            // Wait a moment for service to start
-            tokio::time::sleep(Duration::from_secs(3)).await;
-            
-            // Verify it started
-            if check_ollama_status().await.unwrap_or(false) {
-                Ok("Ollama started successfully".to_string())
-            } else {
-                Err("Failed to start Ollama service".to_string())
+    let mut last_error = String::new();
+    
+    for ollama_path in ollama_commands {
+        match ollama_path {
+            Ok(path) => {
+                log::info!("Trying to start Ollama at: {:?}", path);
+                
+                let result = Command::new(&path)
+                    .arg("serve")
+                    .stdout(Stdio::null())
+                    .stderr(Stdio::null())
+                    .spawn();
+
+                match result {
+                    Ok(_) => {
+                        // Wait for service to start
+                        tokio::time::sleep(Duration::from_secs(3)).await;
+                        
+                        // Verify it started
+                        if check_ollama_status().await.unwrap_or(false) {
+                            return Ok("Ollama started successfully".to_string());
+                        } else {
+                            last_error = "Ollama process started but service is not responding".to_string();
+                        }
+                    },
+                    Err(e) => {
+                        last_error = format!("Failed to start Ollama at {:?}: {}", path, e);
+                        log::warn!("{}", last_error);
+                    }
+                }
+            },
+            Err(e) => {
+                last_error = e;
+                log::warn!("{}", last_error);
             }
-        },
-        Err(e) => Err(format!("Failed to start Ollama: {}. Please ensure Ollama is installed.", e)),
+        }
     }
+
+    Err(format!("Failed to start Ollama. Last error: {}", last_error))
 }
 
 #[command]
-pub async fn download_model(model_name: String) -> Result<String, String> {
+pub async fn download_model(model_name: String, app_handle: AppHandle) -> Result<String, String> {
     log::info!("Starting download for model: {}", model_name);
     
-    let result = Command::new("ollama")
-        .arg("pull")
-        .arg(&model_name)
-        .output();
+    // Try bundled Ollama first, then system Ollama
+    let ollama_commands = vec![
+        get_bundled_ollama_path(&app_handle),
+        Ok(PathBuf::from("ollama")),
+    ];
 
-    match result {
-        Ok(output) => {
-            if output.status.success() {
-                Ok(format!("Model {} downloaded successfully", model_name))
-            } else {
-                let error = String::from_utf8_lossy(&output.stderr);
-                Err(format!("Failed to download model {}: {}", model_name, error))
+    for ollama_path in ollama_commands {
+        if let Ok(path) = ollama_path {
+            let result = Command::new(&path)
+                .arg("pull")
+                .arg(&model_name)
+                .output();
+
+            match result {
+                Ok(output) => {
+                    if output.status.success() {
+                        return Ok(format!("Model {} downloaded successfully", model_name));
+                    } else {
+                        let error = String::from_utf8_lossy(&output.stderr);
+                        log::warn!("Download failed with {:?}: {}", path, error);
+                    }
+                },
+                Err(e) => {
+                    log::warn!("Failed to execute ollama pull with {:?}: {}", path, e);
+                }
             }
-        },
-        Err(e) => Err(format!("Failed to execute ollama pull: {}", e)),
+        }
     }
+    
+    Err(format!("Failed to download model {}. Please ensure Ollama is running.", model_name))
 }
 
 #[command]
@@ -258,4 +306,24 @@ pub async fn list_installed_models() -> Result<Vec<String>, String> {
 #[command]
 pub fn get_model_recommendations() -> Vec<ModelInfo> {
     get_available_models()
+}
+
+#[command]
+pub async fn setup_bundled_ollama(app_handle: AppHandle) -> Result<String, String> {
+    let ollama_path = get_bundled_ollama_path(&app_handle)?;
+    
+    if !ollama_path.exists() {
+        return Err("Bundled Ollama binary not found. Please download and install the complete application package.".to_string());
+    }
+
+    // Make executable on Unix systems
+    #[cfg(not(target_os = "windows"))]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        if let Err(e) = std::fs::set_permissions(&ollama_path, std::fs::Permissions::from_mode(0o755)) {
+            log::warn!("Failed to set executable permissions: {}", e);
+        }
+    }
+
+    Ok("Bundled Ollama is ready".to_string())
 }
