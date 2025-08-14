@@ -210,28 +210,6 @@ Sample data: ${JSON.stringify(sampleData, null, 2)}`
       setIsExecutingCode(false)
     }
   }
-        throw new Error('Failed to execute Python code')
-      }
-
-      const result = await response.json()
-      
-      const outputMessage: Message = {
-        id: Date.now().toString(),
-        type: 'assistant',
-        content: `**Code Execution Result:**\n\n\`\`\`\n${result.output}\n\`\`\`\n\n${result.error ? `**Error:**\n\`\`\`\n${result.error}\n\`\`\`` : ''}`,
-        timestamp: new Date(),
-        fileContext: selectedFile?.name
-      }
-
-      setMessages(prev => [...prev, outputMessage])
-      toast.success('Code executed successfully!')
-    } catch (error) {
-      toast.error('Failed to execute Python code')
-      console.error('Python execution error:', error)
-    } finally {
-      setIsExecutingCode(false)
-    }
-  }
 
   const handleRunTTest = async () => {
     if (!selectedFile || !selectedFile.dataset_id || !currentChatId || !isBackendReady) {
