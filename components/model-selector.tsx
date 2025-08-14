@@ -17,6 +17,16 @@ interface ModelSelectorProps {
   onModelReady: (isReady: boolean) => void
 }
 
+type ModelType = 'local' | 'cloud'
+
+interface ModelOption {
+  id: string
+  name: string
+  type: ModelType
+  description: string
+  available: boolean
+}
+
 export function ModelSelector({ selectedModel, onModelChange, onModelReady }: ModelSelectorProps) {
   const [hardware, setHardware] = useState<HardwareInfo | null>(null)
   const [modelRecommendations, setModelRecommendations] = useState<ModelInfo[]>([])
