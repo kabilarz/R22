@@ -3,7 +3,7 @@ FastAPI backend for the statistical analysis app.
 Provides endpoints for dataset management, analysis, and chat history.
 """
 
-from fastapi import FastAPI, UploadFile, File, HTTPException, Form
+from fastapi import FastAPI, UploadFile, File, HTTPException, Form, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
@@ -21,7 +21,10 @@ from analyses import (
     run_chi_square_test, run_correlation_analysis, run_anova
 )
 
-app = FastAPI(title="Statistical Analysis API", version="1.0.0", root_path="/api")
+app = FastAPI(title="Statistical Analysis API", version="1.0.0")
+
+# Create API router
+api_router = APIRouter(prefix="/api")
 
 # Add CORS middleware to allow frontend connections
 app.add_middleware(
