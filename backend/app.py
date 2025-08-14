@@ -21,7 +21,7 @@ from analyses import (
     run_chi_square_test, run_correlation_analysis, run_anova
 )
 
-app = FastAPI(title="Statistical Analysis API", version="1.0.0")
+app = FastAPI(title="Statistical Analysis API", version="1.0.0", root_path="/api")
 
 # Add CORS middleware to allow frontend connections
 app.add_middleware(
