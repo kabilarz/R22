@@ -181,23 +181,35 @@ Sample data: ${JSON.stringify(sampleData, null, 2)}`
       return
     }
 
+    if (!selectedFile || !isBackendReady) {
+      toast.error('Please ensure a file is selected and backend is ready')
+      return
+    }
+
     setIsExecutingCode(true)
     setPythonOutput(null)
 
     try {
-      const response = await fetch('/api/execute-python', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          code: code,
-          fileName: selectedFile?.name || 'user_data',
-          fileData: selectedFile?.data || []
-        })
-      })
+      const result = await apiClient.executePythonCode(
+        code,
+        selectedFile.name,
+        selectedFile.data
+      )
 
-      if (!response.ok) {
+      if (result.success) {
+        setPythonOutput(result.output || 'Code executed successfully (no output)')
+        toast.success('Python code executed successfully')
+      } else {
+        setPythonOutput(`Error: ${result.error || 'Unknown error occurred'}`)
+        toast.error('Python code execution failed')
+      }
+    } catch (error) {
+      setPythonOutput(`Error: ${error}`)
+      toast.error('Failed to execute Python code')
+    } finally {
+      setIsExecutingCode(false)
+    }
+  }
         throw new Error('Failed to execute Python code')
       }
 
