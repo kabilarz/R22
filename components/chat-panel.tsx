@@ -15,7 +15,7 @@ import { Input } from '@/components/ui/input'
 import { MarkdownRenderer } from '@/components/markdown-renderer'
 import { ModelSelector } from '@/components/model-selector'
 import { apiClient } from '@/lib/api'
-import { ollamaClient } from '@/lib/ollama-client'
+import { aiService } from '@/lib/ai-service'
 
 interface UploadedFile {
   id: string
