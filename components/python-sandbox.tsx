@@ -256,34 +256,19 @@ export function PythonSandbox({ selectedFile }: PythonSandboxProps) {
     setOutput('')
 
     try {
-      const response = await fetch('/api/execute-python', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          code: code,
-          fileName: selectedFile?.name || 'user_data',
-          fileData: selectedFile?.data || []
-        })
-      })
+      const result = await apiClient.executePythonCode(
+        code,
+        selectedFile?.name || 'user_data',
+        selectedFile?.data || []
+      )
 
-      if (!response.ok) {
-        throw new Error('Failed to execute Python code')
+      if (result.success) {
+        setOutput(result.output || 'Code executed successfully (no output)')
+        toast.success('Code executed successfully!')
+      } else {
+        setOutput(`Error: ${result.error || 'Unknown error occurred'}`)
+        toast.error('Code execution failed')
       }
-
-      const result = await response.json()
-      
-      let formattedOutput = ''
-      if (result.output) {
-        formattedOutput += `Output:\\n${result.output}\\n`
-      }
-      if (result.error) {
-        formattedOutput += `\\nError:\\n${result.error}`
-      }
-      
-      setOutput(formattedOutput || 'No output generated')
-      toast.success('Code executed successfully!')
     } catch (error) {
       setOutput(`Execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
       toast.error('Failed to execute Python code')
