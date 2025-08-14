@@ -98,6 +98,11 @@ What would you like to know about your data?`,
       return
     }
 
+    if (!isModelReady) {
+      toast.error('AI model is not ready. Please setup and select a model first.')
+      return
+    }
+
     const userMessage: Message = {
       id: Date.now().toString(),
       type: 'user',
@@ -111,30 +116,22 @@ What would you like to know about your data?`,
     setIsLoading(true)
 
     try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          message: inputMessage,
-          fileData: selectedFile.data,
-          fileName: selectedFile.name,
-          model: selectedModel,
-          apiKey: apiKey
-        })
-      })
+      // Create data context for the LLM
+      const columns = selectedFile.data.length > 0 ? Object.keys(selectedFile.data[0]) : []
+      const sampleData = selectedFile.data.slice(0, 3)
+      const dataContext = `
+Dataset: ${selectedFile.name}
+Rows: ${selectedFile.data.length}
+Columns: ${columns.join(', ')}
+Sample data: ${JSON.stringify(sampleData, null, 2)}`
 
-      if (!response.ok) {
-        throw new Error('Failed to get AI response')
-      }
-
-      const data = await response.json()
+      // Use local LLM instead of Gemini
+      const response = await ollamaClient.generateAnalysisCode(inputMessage, dataContext)
       
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         type: 'assistant',
-        content: data.response,
+        content: response,
         timestamp: new Date(),
         fileContext: selectedFile.name
       }
@@ -143,6 +140,16 @@ What would you like to know about your data?`,
     } catch (error) {
       toast.error('Failed to send message. Please try again.')
       console.error('Chat error:', error)
+      
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        type: 'assistant',
+        content: `I apologize, but I encountered an error: ${error}. Please ensure your AI model is properly set up and try again.`,
+        timestamp: new Date(),
+        fileContext: selectedFile.name
+      }
+      
+      setMessages(prev => [...prev, errorMessage])
     } finally {
       setIsLoading(false)
     }
