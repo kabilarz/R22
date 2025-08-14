@@ -106,7 +106,7 @@ class ANOVARequest(BaseModel):
     value_col: str
     where_sql: Optional[str] = None
 
-@app.post("/init", response_model=InitResponse)
+@api_router.post("/init", response_model=InitResponse)
 async def initialize_database():
     """Initialize the DuckDB database with required tables."""
     try:
@@ -115,7 +115,7 @@ async def initialize_database():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to initialize database: {str(e)}")
 
-@app.post("/chats", response_model=ChatResponse)
+@api_router.post("/chats", response_model=ChatResponse)
 async def create_chat(request: ChatRequest):
     """Create a new chat session."""
     try:
@@ -124,7 +124,7 @@ async def create_chat(request: ChatRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to create chat: {str(e)}")
 
-@app.post("/datasets/upload", response_model=DatasetUploadResponse)
+@api_router.post("/datasets/upload", response_model=DatasetUploadResponse)
 async def upload_dataset(file: UploadFile = File(...)):
     """Upload and save a dataset as Parquet with DuckDB view."""
     try:
@@ -159,7 +159,7 @@ async def upload_dataset(file: UploadFile = File(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to upload dataset: {str(e)}")
 
-@app.put("/variables/{dataset_id}", response_model=SuccessResponse)
+@api_router.put("/variables/{dataset_id}", response_model=SuccessResponse)
 async def update_variables(dataset_id: str, request: VariablesUpdateRequest):
     """Update variable metadata for a dataset."""
     try:
@@ -169,7 +169,7 @@ async def update_variables(dataset_id: str, request: VariablesUpdateRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to update variables: {str(e)}")
 
-@app.get("/variables/{dataset_id}")
+@api_router.get("/variables/{dataset_id}")
 async def get_dataset_variables(dataset_id: str):
     """Get variable metadata for a dataset."""
     try:
@@ -178,7 +178,7 @@ async def get_dataset_variables(dataset_id: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get variables: {str(e)}")
 
-@app.post("/analysis/ttest", response_model=TTestResponse)
+@api_router.post("/analysis/ttest", response_model=TTestResponse)
 async def perform_ttest(request: TTestRequest):
     """Perform t-test analysis and log the results."""
     try:
@@ -216,7 +216,7 @@ async def perform_ttest(request: TTestRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to perform t-test: {str(e)}")
 
-@app.get("/history/{chat_id}")
+@api_router.get("/history/{chat_id}")
 async def get_chat_analysis_history(chat_id: str):
     """Get analysis history for a specific chat."""
     try:
@@ -225,7 +225,7 @@ async def get_chat_analysis_history(chat_id: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get chat history: {str(e)}")
 
-@app.get("/datasets")
+@api_router.get("/datasets")
 async def list_datasets():
     """Get all available datasets."""
     try:
@@ -234,7 +234,7 @@ async def list_datasets():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to list datasets: {str(e)}")
 
-@app.get("/datasets/{dataset_id}")
+@api_router.get("/datasets/{dataset_id}")
 async def get_dataset_details(dataset_id: str):
     """Get detailed information about a specific dataset."""
     try:
@@ -252,12 +252,12 @@ async def get_dataset_details(dataset_id: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get dataset details: {str(e)}")
 
-@app.get("/health")
+@api_router.get("/health")
 async def health_check():
     """Health check endpoint."""
     return {"status": "healthy", "message": "Statistical Analysis API is running"}
 
-@app.post("/analysis/descriptive")
+@api_router.post("/analysis/descriptive")
 async def get_descriptive_statistics(request: DescriptiveStatsRequest):
     """Get descriptive statistics for specified columns."""
     try:
@@ -266,7 +266,7 @@ async def get_descriptive_statistics(request: DescriptiveStatsRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to generate descriptive statistics: {str(e)}")
 
-@app.post("/analysis/chisquare")
+@api_router.post("/analysis/chisquare")
 async def perform_chi_square_test(request: ChiSquareRequest):
     """Perform chi-square test of independence."""
     try:
@@ -298,7 +298,7 @@ async def perform_chi_square_test(request: ChiSquareRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to perform chi-square test: {str(e)}")
 
-@app.post("/analysis/correlation")
+@api_router.post("/analysis/correlation")
 async def perform_correlation_analysis(request: CorrelationRequest):
     """Perform correlation analysis."""
     try:
@@ -311,7 +311,7 @@ async def perform_correlation_analysis(request: CorrelationRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to perform correlation analysis: {str(e)}")
 
-@app.post("/analysis/anova")
+@api_router.post("/analysis/anova")
 async def perform_anova(request: ANOVARequest):
     """Perform one-way ANOVA."""
     try:
@@ -342,6 +342,9 @@ async def perform_anova(request: ANOVARequest):
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to perform ANOVA: {str(e)}")
+
+# Include the API router in the main app
+app.include_router(api_router)
 
 if __name__ == "__main__":
     import uvicorn
