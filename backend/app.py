@@ -360,6 +360,108 @@ async def perform_anova(request: ANOVARequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to perform ANOVA: {str(e)}")
 
+@api_router.post("/execute-python", response_model=PythonExecutionResponse)
+async def execute_python_code(request: PythonExecutionRequest):
+    """Execute Python code with the provided dataset."""
+    try:
+        # Create a temporary file for the dataset
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as temp_file:
+            json.dump(request.fileData, temp_file)
+            temp_file_path = temp_file.name
+
+        # Prepare Python code with data loading
+        python_code = f"""
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+import json
+import sys
+import io
+from contextlib import redirect_stdout, redirect_stderr
+
+# Load the dataset
+with open('{temp_file_path}', 'r') as f:
+    data = json.load(f)
+
+df = pd.DataFrame(data)
+
+# Capture output
+output_buffer = io.StringIO()
+error_buffer = io.StringIO()
+
+try:
+    with redirect_stdout(output_buffer), redirect_stderr(error_buffer):
+        # User code starts here
+{request.code}
+        # User code ends here
+        
+    # Get the output
+    output = output_buffer.getvalue()
+    errors = error_buffer.getvalue()
+    
+    if errors:
+        print("STDERR:", errors)
+    
+    print("EXECUTION_COMPLETE")
+    
+except Exception as e:
+    print(f"EXECUTION_ERROR: {{str(e)}}")
+    import traceback
+    traceback.print_exc()
+"""
+
+        # Execute the Python code
+        result = subprocess.run(
+            [sys.executable, '-c', python_code],
+            capture_output=True,
+            text=True,
+            timeout=30  # 30 second timeout
+        )
+
+        # Clean up temporary file
+        try:
+            os.unlink(temp_file_path)
+        except:
+            pass
+
+        # Parse the output
+        output = result.stdout
+        error_output = result.stderr
+        
+        success = result.returncode == 0 and "EXECUTION_ERROR:" not in output
+        
+        if not success and error_output:
+            error_output = f"Process error: {error_output}"
+        elif "EXECUTION_ERROR:" in output:
+            # Extract the error from output
+            error_lines = [line for line in output.split('\n') if 'EXECUTION_ERROR:' in line]
+            if error_lines:
+                error_output = error_lines[0].replace('EXECUTION_ERROR: ', '')
+        
+        # Clean the output
+        if "EXECUTION_COMPLETE" in output:
+            output = output.replace("EXECUTION_COMPLETE", "").strip()
+        
+        return PythonExecutionResponse(
+            output=output,
+            error=error_output if error_output else None,
+            success=success
+        )
+
+    except subprocess.TimeoutExpired:
+        return PythonExecutionResponse(
+            output="",
+            error="Code execution timed out (30 seconds limit)",
+            success=False
+        )
+    except Exception as e:
+        return PythonExecutionResponse(
+            output="",
+            error=f"Failed to execute Python code: {str(e)}",
+            success=False
+        )
+
 # Include the API router in the main app
 app.include_router(api_router)
 
