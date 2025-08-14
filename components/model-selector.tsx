@@ -68,6 +68,14 @@ export function ModelSelector({ selectedModel, onModelChange, onModelReady }: Mo
     try {
       setIsInitializing(true)
       
+      // Setup bundled Ollama first
+      try {
+        await ollamaClient.setupBundledOllama()
+        log.info('Bundled Ollama setup completed')
+      } catch (error) {
+        log.warn('Bundled Ollama setup failed, will try system Ollama:', error)
+      }
+      
       // Get hardware info
       const hwInfo = await ollamaClient.getHardwareInfo()
       setHardware(hwInfo)
@@ -90,19 +98,27 @@ export function ModelSelector({ selectedModel, onModelChange, onModelReady }: Mo
           const recommendedModel = hwInfo.recommended_model
           const hasRecommended = models.some(m => m.includes(recommendedModel.split(':')[0]))
           onModelChange(hasRecommended ? recommendedModel : models[0])
+        } else if (!selectedModel) {
+          // Default to cloud model if no local models
+          onModelChange('gemini-1.5-flash')
         }
         
-        onModelReady(models.length > 0)
+        onModelReady(true) // Both local and cloud options available
       } else {
-        onModelReady(false)
-        // Show setup dialog if Ollama is not running
-        setIsSetupOpen(true)
+        // If Ollama is not running, default to cloud model
+        if (!selectedModel) {
+          onModelChange('gemini-1.5-flash')
+        }
+        onModelReady(true) // Cloud model is still available
       }
       
     } catch (error) {
       console.error('Failed to initialize Ollama:', error)
-      toast.error('Failed to initialize local AI models')
-      onModelReady(false)
+      // Fallback to cloud model
+      if (!selectedModel) {
+        onModelChange('gemini-1.5-flash')
+      }
+      onModelReady(true) // Cloud model is available as fallback
     } finally {
       setIsInitializing(false)
     }
