@@ -43,7 +43,7 @@ export default function Home() {
         toast.success('Backend initialized successfully')
       } catch (error) {
         console.error('Failed to initialize backend:', error)
-        toast.error('Failed to connect to backend. Please ensure the Python server is running on localhost:8000')
+        toast.error('Failed to connect to backend. Please ensure the Python server is running on the configured port')
       }
     }
 
