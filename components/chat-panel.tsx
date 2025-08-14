@@ -336,84 +336,49 @@ Sample data: ${JSON.stringify(sampleData, null, 2)}`
   return (
     <div className="h-full flex flex-col">
       <div className="p-2 border-b">
-        <div className="flex items-center justify-between"><div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              <Select value={selectedModel} onValueChange={handleModelChange}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Select model" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="gemini-1.5-flash">Gemini 1.5 Flash</SelectItem>
-                  <SelectItem value="gemini-1.5-pro">Gemini 1.5 Pro</SelectItem>
-                  <SelectItem value="gemini-pro">Gemini Pro</SelectItem>
-                </SelectContent>
-              </Select>
-              
-              <Dialog open={isConfigOpen} onOpenChange={setIsConfigOpen}>
-                <DialogTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={handleConfigOpen}
-                    className="flex items-center gap-2"
-                  >
-                    <Settings className="h-4 w-4" />
-                    <Key className="h-4 w-4" />
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px]">
-                  <DialogHeader>
-                    <DialogTitle>Configure Gemini AI</DialogTitle>
-                    <DialogDescription>
-                      Add your Google Gemini API key to enable AI-powered data analysis. 
-                      You can get an API key from{' '}
-                      <a 
-                        href="https://makersuite.google.com/app/apikey" 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-primary hover:underline"
-                      >
-                        Google AI Studio
-                      </a>.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="api-key" className="text-right">
-                        API Key
-                      </Label>
-                      <Input
-                        id="api-key"
-                        type="password"
-                        placeholder="Enter your Gemini API key"
-                        value={tempApiKey}
-                        onChange={(e) => setTempApiKey(e.target.value)}
-                        className="col-span-3"
-                      />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label className="text-right text-sm text-muted-foreground">
-                        Status
-                      </Label>
-                      <div className="col-span-3">
-                        <Badge variant={apiKey ? "default" : "secondary"}>
-                          {apiKey ? "Configured" : "Not configured"}
-                        </Badge>
-                      </div>
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button 
-                      onClick={handleApiKeySubmit}
-                      disabled={!tempApiKey.trim()}
-                    >
-                      Save Configuration
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            </div>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <ModelSelector
+              selectedModel={selectedModel}
+              onModelChange={setSelectedModel}
+              onModelReady={setIsModelReady}
+            />
           </div>
+          
+          {selectedFile && (
+            <div className="flex items-center gap-2">
+              {/* Quick query examples */}
+              <div className="hidden md:flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleQuickQuery("Show basic statistics for all variables")}
+                  className="text-xs"
+                >
+                  <BarChart3 className="h-3 w-3 mr-1" />
+                  Stats
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleQuickQuery("Compare key metrics by gender")}
+                  className="text-xs"
+                >
+                  <User className="h-3 w-3 mr-1" />
+                  Gender
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleQuickQuery("Find correlations between numeric variables")}
+                  className="text-xs"
+                >
+                  <Lightbulb className="h-3 w-3 mr-1" />
+                  Insights
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
