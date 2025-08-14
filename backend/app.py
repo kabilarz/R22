@@ -80,6 +80,29 @@ class TTestResponse(BaseModel):
 class SuccessResponse(BaseModel):
     ok: bool
 
+class DescriptiveStatsRequest(BaseModel):
+    dataset_id: str
+    columns: Optional[List[str]] = None
+
+class ChiSquareRequest(BaseModel):
+    chat_id: str
+    dataset_id: str
+    col1: str
+    col2: str
+    where_sql: Optional[str] = None
+
+class CorrelationRequest(BaseModel):
+    dataset_id: str
+    columns: Optional[List[str]] = None
+    method: str = 'pearson'
+
+class ANOVARequest(BaseModel):
+    chat_id: str
+    dataset_id: str
+    group_col: str
+    value_col: str
+    where_sql: Optional[str] = None
+
 @app.post("/init", response_model=InitResponse)
 async def initialize_database():
     """Initialize the DuckDB database with required tables."""
