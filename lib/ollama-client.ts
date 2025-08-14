@@ -48,6 +48,17 @@ export class OllamaClient {
   }
 
   /**
+   * Setup bundled Ollama
+   */
+  async setupBundledOllama(): Promise<string> {
+    try {
+      return await invoke<string>('setup_bundled_ollama')
+    } catch (error) {
+      throw new Error(`Failed to setup bundled Ollama: ${error}`)
+    }
+  }
+
+  /**
    * Start Ollama service
    */
   async startOllama(): Promise<string> {
