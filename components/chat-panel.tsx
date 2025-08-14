@@ -162,23 +162,14 @@ Sample data: ${JSON.stringify(sampleData, null, 2)}`
     }
   }
 
-  const handleModelChange = (value: string) => {
-    setSelectedModel(value)
-    localStorage.setItem('gemini-model', value)
-    toast.success(`Model changed to ${value}`)
-  }
-
-  const handleApiKeySubmit = () => {
-    setApiKey(tempApiKey)
-    localStorage.setItem('gemini-api-key', tempApiKey)
-    setIsConfigOpen(false)
-    setTempApiKey('')
-    toast.success('API key updated successfully!')
-  }
-
-  const handleConfigOpen = () => {
-    setTempApiKey(apiKey)
-    setIsConfigOpen(true)
+  const handleQuickQuery = async (query: string) => {
+    setInputMessage(query)
+    // Auto-send the query
+    setTimeout(() => {
+      if (textareaRef.current) {
+        textareaRef.current.focus()
+      }
+    }, 100)
   }
 
   const handleRunPythonCode = async (code: string, language: string) => {
