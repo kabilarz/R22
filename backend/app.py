@@ -10,6 +10,10 @@ from typing import List, Optional, Dict, Any
 import pandas as pd
 import io
 import json
+import subprocess
+import tempfile
+import os
+import sys
 
 from data_store import (
     init_store, start_chat, save_dataset, upsert_variables, 
