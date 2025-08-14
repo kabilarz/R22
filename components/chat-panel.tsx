@@ -6,14 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
-import { MessageSquare, Send, Bot, User, FileText, BarChart3, Settings, Key } from 'lucide-react'
+import { MessageSquare, Send, Bot, User, FileText, BarChart3, Lightbulb, Code } from 'lucide-react'
 import { toast } from 'sonner'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { MarkdownRenderer } from '@/components/markdown-renderer'
+import { ModelSelector } from '@/components/model-selector'
 import { apiClient } from '@/lib/api'
+import { ollamaClient } from '@/lib/ollama-client'
 
 interface UploadedFile {
   id: string
