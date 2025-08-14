@@ -62,14 +62,6 @@ export function ChatPanel({ selectedFile, currentChatId, isBackendReady }: ChatP
   }, [messages])
 
   useEffect(() => {
-    // Load saved API key and model from localStorage
-    const savedApiKey = localStorage.getItem('gemini-api-key') || ''
-    const savedModel = localStorage.getItem('gemini-model') || 'gemini-1.5-flash'
-    setApiKey(savedApiKey)
-    setSelectedModel(savedModel)
-  }, [])
-
-  useEffect(() => {
     if (selectedFile) {
       const welcomeMessage: Message = {
         id: Date.now().toString(),
@@ -83,7 +75,12 @@ export function ChatPanel({ selectedFile, currentChatId, isBackendReady }: ChatP
 
 **Statistical Analysis Tools:**
 • Click the "Run t-test" button below to perform statistical comparisons
-• Use the Python sandbox for custom analysis
+• Use natural language to generate analysis code
+
+**Example Queries:**
+• "Calculate average age by gender"
+• "Show correlation between BMI and blood pressure"
+• "Find patients with high risk factors"
 
 What would you like to know about your data?`,
         timestamp: new Date(),
