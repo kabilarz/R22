@@ -254,6 +254,92 @@ async def health_check():
     """Health check endpoint."""
     return {"status": "healthy", "message": "Statistical Analysis API is running"}
 
+@app.post("/analysis/descriptive")
+async def get_descriptive_statistics(request: DescriptiveStatsRequest):
+    """Get descriptive statistics for specified columns."""
+    try:
+        result = run_descriptive_stats(request.dataset_id, request.columns)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to generate descriptive statistics: {str(e)}")
+
+@app.post("/analysis/chisquare")
+async def perform_chi_square_test(request: ChiSquareRequest):
+    """Perform chi-square test of independence."""
+    try:
+        result = run_chi_square_test(
+            dataset_id=request.dataset_id,
+            col1=request.col1,
+            col2=request.col2,
+            where_sql=request.where_sql
+        )
+        
+        # Log the analysis run
+        params = {
+            "dataset_id": request.dataset_id,
+            "col1": request.col1,
+            "col2": request.col2,
+            "where_sql": request.where_sql
+        }
+        
+        run_id = log_run(
+            chat_id=request.chat_id,
+            dataset_id=request.dataset_id,
+            analysis="chisquare",
+            params_dict=params,
+            result_dict=result
+        )
+        
+        return {"run_id": run_id, **result}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to perform chi-square test: {str(e)}")
+
+@app.post("/analysis/correlation")
+async def perform_correlation_analysis(request: CorrelationRequest):
+    """Perform correlation analysis."""
+    try:
+        result = run_correlation_analysis(
+            dataset_id=request.dataset_id,
+            columns=request.columns,
+            method=request.method
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to perform correlation analysis: {str(e)}")
+
+@app.post("/analysis/anova")
+async def perform_anova(request: ANOVARequest):
+    """Perform one-way ANOVA."""
+    try:
+        result = run_anova(
+            dataset_id=request.dataset_id,
+            group_col=request.group_col,
+            value_col=request.value_col,
+            where_sql=request.where_sql
+        )
+        
+        # Log the analysis run
+        params = {
+            "dataset_id": request.dataset_id,
+            "group_col": request.group_col,
+            "value_col": request.value_col,
+            "where_sql": request.where_sql
+        }
+        
+        run_id = log_run(
+            chat_id=request.chat_id,
+            dataset_id=request.dataset_id,
+            analysis="anova",
+            params_dict=params,
+            result_dict=result
+        )
+        
+        return {"run_id": run_id, **result}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to perform ANOVA: {str(e)}")
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
