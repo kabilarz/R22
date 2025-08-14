@@ -71,9 +71,9 @@ export function ModelSelector({ selectedModel, onModelChange, onModelReady }: Mo
       // Setup bundled Ollama first
       try {
         await ollamaClient.setupBundledOllama()
-        log.info('Bundled Ollama setup completed')
+        console.log('Bundled Ollama setup completed')
       } catch (error) {
-        log.warn('Bundled Ollama setup failed, will try system Ollama:', error)
+        console.warn('Bundled Ollama setup failed, will try system Ollama:', error)
       }
       
       // Get hardware info
