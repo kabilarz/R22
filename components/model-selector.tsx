@@ -37,6 +37,29 @@ export function ModelSelector({ selectedModel, onModelChange, onModelReady }: Mo
   const [isSetupOpen, setIsSetupOpen] = useState(false)
   const [isInitializing, setIsInitializing] = useState(true)
 
+  // Available model options including cloud fallback
+  const getAvailableModels = (): ModelOption[] => {
+    const localModels = installedModels.map(model => ({
+      id: model,
+      name: model,
+      type: 'local' as ModelType,
+      description: 'Local AI model',
+      available: true
+    }))
+
+    const cloudModels: ModelOption[] = [
+      {
+        id: 'gemini-1.5-flash',
+        name: 'Google Gemini (Cloud)',
+        type: 'cloud' as ModelType,
+        description: 'Cloud-based AI model with internet access',
+        available: true
+      }
+    ]
+
+    return [...localModels, ...cloudModels]
+  }
+
   useEffect(() => {
     initializeOllama()
   }, [])
