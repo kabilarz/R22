@@ -119,7 +119,7 @@ What would you like to know about your data?`,
     setIsLoading(true)
 
     try {
-      // Create data context for the LLM
+      // Create data context for the AI
       const columns = selectedFile.data.length > 0 ? Object.keys(selectedFile.data[0]) : []
       const sampleData = selectedFile.data.slice(0, 3)
       const dataContext = `
@@ -128,8 +128,8 @@ Rows: ${selectedFile.data.length}
 Columns: ${columns.join(', ')}
 Sample data: ${JSON.stringify(sampleData, null, 2)}`
 
-      // Use local LLM instead of Gemini
-      const response = await ollamaClient.generateAnalysisCode(inputMessage, dataContext)
+      // Use the AI service to handle both local and cloud models
+      const response = await aiService.generateAnalysisCode(selectedModel, inputMessage, dataContext)
       
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -147,7 +147,7 @@ Sample data: ${JSON.stringify(sampleData, null, 2)}`
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         type: 'assistant',
-        content: `I apologize, but I encountered an error: ${error}. Please ensure your AI model is properly set up and try again.`,
+        content: `I apologize, but I encountered an error: ${error}. Please check your model setup and try again. You can switch to the cloud model (Google Gemini) as a fallback.`,
         timestamp: new Date(),
         fileContext: selectedFile.name
       }
