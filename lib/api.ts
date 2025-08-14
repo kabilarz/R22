@@ -216,6 +216,24 @@ export class APIClient {
     if (!response.ok) throw new Error(`Health check failed: ${response.statusText}`)
     return await response.json()
   }
+
+  async executePythonCode(code: string, fileName: string, fileData: any[]): Promise<{
+    output: string;
+    error?: string;
+    success: boolean;
+  }> {
+    const response = await fetch(`${this.baseUrl}/execute-python`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        code,
+        fileName,
+        fileData
+      })
+    })
+    if (!response.ok) throw new Error(`Failed to execute Python code: ${response.statusText}`)
+    return await response.json()
+  }
 }
 
 // Export a default instance
