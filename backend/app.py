@@ -3,7 +3,7 @@ FastAPI backend for the statistical analysis app.
 Provides endpoints for dataset management, analysis, and chat history.
 """
 
-from fastapi import FastAPI, UploadFile, File, HTTPException, Form, APIRouter
+from fastapi import FastAPI, UploadFile, File, HTTPException, Form, APIRouter, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
