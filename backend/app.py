@@ -16,7 +16,10 @@ from data_store import (
     get_variables, get_dataset_info, log_run, get_chat_history,
     get_all_datasets
 )
-from analyses import run_ttest, get_dataset_summary
+from analyses import (
+    run_ttest, get_dataset_summary, run_descriptive_stats, 
+    run_chi_square_test, run_correlation_analysis, run_anova
+)
 
 app = FastAPI(title="Statistical Analysis API", version="1.0.0")
 
