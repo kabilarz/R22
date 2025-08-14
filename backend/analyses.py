@@ -1,12 +1,12 @@
 """
 Statistical analysis functions for the app.
-Currently implements t-test analysis with DuckDB integration.
+Implements comprehensive statistical analyses with DuckDB integration.
 """
 
 import pandas as pd
 from scipy import stats
 import numpy as np
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from data_store import get_connection, query_dataset
 
 def run_ttest(dataset_id: str, group_col: str, value_col: str, where_sql: Optional[str] = None) -> Dict[str, Any]:
@@ -198,3 +198,235 @@ def get_dataset_summary(dataset_id: str) -> Dict[str, Any]:
         
     except Exception as e:
         return {"error": f"Failed to generate summary: {str(e)}"}
+
+def run_descriptive_stats(dataset_id: str, columns: Optional[List[str]] = None) -> Dict[str, Any]:
+    """Generate descriptive statistics for specified columns or all numeric columns."""
+    try:
+        view_name = f"v_{dataset_id.replace('-', '_')}"
+        
+        if columns:
+            col_list = ", ".join(columns)
+            query = f"SELECT {col_list} FROM {view_name}"
+        else:
+            query = f"SELECT * FROM {view_name}"
+        
+        conn = get_connection()
+        try:
+            df = conn.execute(query).fetchdf()
+        finally:
+            conn.close()
+            
+        if df.empty:
+            return {"error": "No data found"}
+        
+        # Get numeric columns only
+        numeric_df = df.select_dtypes(include=[np.number])
+        
+        if numeric_df.empty:
+            return {"error": "No numeric columns found"}
+        
+        # Calculate descriptive statistics
+        desc_stats = numeric_df.describe()
+        
+        # Additional statistics
+        stats_dict = {}
+        for col in numeric_df.columns:
+            col_data = numeric_df[col].dropna()
+            if len(col_data) > 0:
+                stats_dict[col] = {
+                    "count": int(desc_stats.loc['count', col]),
+                    "mean": float(desc_stats.loc['mean', col]),
+                    "std": float(desc_stats.loc['std', col]),
+                    "min": float(desc_stats.loc['min', col]),
+                    "q25": float(desc_stats.loc['25%', col]),
+                    "median": float(desc_stats.loc['50%', col]),
+                    "q75": float(desc_stats.loc['75%', col]),
+                    "max": float(desc_stats.loc['max', col]),
+                    "skewness": float(stats.skew(col_data)),
+                    "kurtosis": float(stats.kurtosis(col_data)),
+                    "missing_count": int(df[col].isnull().sum()),
+                    "missing_percent": float(df[col].isnull().sum() / len(df) * 100)
+                }
+        
+        return {
+            "statistics": stats_dict,
+            "total_rows": len(df),
+            "numeric_columns": len(numeric_df.columns)
+        }
+        
+    except Exception as e:
+        return {"error": f"Failed to generate descriptive statistics: {str(e)}"}
+
+def run_chi_square_test(dataset_id: str, col1: str, col2: str, where_sql: Optional[str] = None) -> Dict[str, Any]:
+    """Run chi-square test of independence between two categorical variables."""
+    try:
+        view_name = f"v_{dataset_id.replace('-', '_')}"
+        base_query = f"SELECT {col1}, {col2} FROM {view_name}"
+        
+        if where_sql:
+            query = f"{base_query} WHERE {where_sql}"
+        else:
+            query = base_query
+            
+        conn = get_connection()
+        try:
+            df = conn.execute(query).fetchdf()
+        finally:
+            conn.close()
+            
+        if df.empty:
+            return {"error": "No data returned from query"}
+        
+        # Create contingency table
+        contingency_table = pd.crosstab(df[col1], df[col2])
+        
+        if contingency_table.empty or contingency_table.shape[0] < 2 or contingency_table.shape[1] < 2:
+            return {"error": "Insufficient data for chi-square test"}
+        
+        # Perform chi-square test
+        chi2, p_value, dof, expected = stats.chi2_contingency(contingency_table)
+        
+        # Calculate effect size (Cramér's V)
+        n = contingency_table.sum().sum()
+        cramers_v = np.sqrt(chi2 / (n * (min(contingency_table.shape) - 1)))
+        
+        return {
+            "chi2_statistic": float(chi2),
+            "p_value": float(p_value),
+            "degrees_of_freedom": int(dof),
+            "cramers_v": float(cramers_v),
+            "contingency_table": contingency_table.to_dict(),
+            "expected_frequencies": expected.tolist(),
+            "sample_size": int(n)
+        }
+        
+    except Exception as e:
+        return {"error": f"Chi-square test failed: {str(e)}"}
+
+def run_correlation_analysis(dataset_id: str, columns: Optional[List[str]] = None, method: str = 'pearson') -> Dict[str, Any]:
+    """Calculate correlation matrix for numeric variables."""
+    try:
+        view_name = f"v_{dataset_id.replace('-', '_')}"
+        
+        if columns:
+            col_list = ", ".join(columns)
+            query = f"SELECT {col_list} FROM {view_name}"
+        else:
+            query = f"SELECT * FROM {view_name}"
+        
+        conn = get_connection()
+        try:
+            df = conn.execute(query).fetchdf()
+        finally:
+            conn.close()
+            
+        if df.empty:
+            return {"error": "No data found"}
+        
+        # Get numeric columns only
+        numeric_df = df.select_dtypes(include=[np.number])
+        
+        if numeric_df.empty or len(numeric_df.columns) < 2:
+            return {"error": "Need at least 2 numeric columns for correlation analysis"}
+        
+        # Calculate correlation matrix
+        if method == 'pearson':
+            corr_matrix = numeric_df.corr(method='pearson')
+        elif method == 'spearman':
+            corr_matrix = numeric_df.corr(method='spearman')
+        else:
+            return {"error": f"Unsupported correlation method: {method}"}
+        
+        # Find significant correlations (excluding diagonal)
+        significant_pairs = []
+        for i in range(len(corr_matrix.columns)):
+            for j in range(i+1, len(corr_matrix.columns)):
+                col1 = corr_matrix.columns[i]
+                col2 = corr_matrix.columns[j]
+                corr_value = corr_matrix.iloc[i, j]
+                
+                if not np.isnan(corr_value) and abs(corr_value) > 0.3:  # Threshold for "significant"
+                    significant_pairs.append({
+                        "variable1": col1,
+                        "variable2": col2,
+                        "correlation": float(corr_value),
+                        "strength": "strong" if abs(corr_value) > 0.7 else "moderate" if abs(corr_value) > 0.5 else "weak"
+                    })
+        
+        return {
+            "correlation_matrix": corr_matrix.to_dict(),
+            "method": method,
+            "significant_correlations": significant_pairs,
+            "variables_analyzed": list(numeric_df.columns)
+        }
+        
+    except Exception as e:
+        return {"error": f"Correlation analysis failed: {str(e)}"}
+
+def run_anova(dataset_id: str, group_col: str, value_col: str, where_sql: Optional[str] = None) -> Dict[str, Any]:
+    """Run one-way ANOVA to compare means across multiple groups."""
+    try:
+        view_name = f"v_{dataset_id.replace('-', '_')}"
+        base_query = f"SELECT {group_col} AS g, {value_col} AS v FROM {view_name}"
+        
+        if where_sql:
+            query = f"{base_query} WHERE {where_sql}"
+        else:
+            query = base_query
+            
+        conn = get_connection()
+        try:
+            df = conn.execute(query).fetchdf()
+        finally:
+            conn.close()
+            
+        if df.empty:
+            return {"error": "No data returned from query"}
+        
+        # Clean data
+        df_clean = df.dropna()
+        
+        if df_clean.empty:
+            return {"error": "No valid data after removing null values"}
+        
+        # Group data
+        groups = []
+        group_names = []
+        group_stats = {}
+        
+        for name, group in df_clean.groupby('g'):
+            values = group['v'].astype(float).dropna()
+            if len(values) >= 2:  # Need at least 2 observations per group
+                groups.append(values)
+                group_names.append(str(name))
+                group_stats[str(name)] = {
+                    "n": len(values),
+                    "mean": float(values.mean()),
+                    "std": float(values.std()),
+                    "min": float(values.min()),
+                    "max": float(values.max())
+                }
+        
+        if len(groups) < 2:
+            return {"error": "Need at least 2 groups with sufficient data for ANOVA"}
+        
+        # Perform one-way ANOVA
+        f_stat, p_value = stats.f_oneway(*groups)
+        
+        # Calculate effect size (eta-squared)
+        total_mean = np.concatenate(groups).mean()
+        ss_between = sum(len(g) * (g.mean() - total_mean)**2 for g in groups)
+        ss_total = sum((np.concatenate(groups) - total_mean)**2)
+        eta_squared = ss_between / ss_total if ss_total > 0 else 0
+        
+        return {
+            "f_statistic": float(f_stat),
+            "p_value": float(p_value),
+            "eta_squared": float(eta_squared),
+            "group_statistics": group_stats,
+            "total_groups": len(groups),
+            "total_observations": sum(len(g) for g in groups)
+        }
+        
+    except Exception as e:
+        return {"error": f"ANOVA failed: {str(e)}"}
