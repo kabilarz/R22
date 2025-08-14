@@ -113,6 +113,16 @@ class ANOVARequest(BaseModel):
     value_col: str
     where_sql: Optional[str] = None
 
+class PythonExecutionRequest(BaseModel):
+    code: str
+    fileName: str
+    fileData: List[Dict[str, Any]]
+
+class PythonExecutionResponse(BaseModel):
+    output: str
+    error: Optional[str] = None
+    success: bool
+
 @api_router.post("/init", response_model=InitResponse)
 async def initialize_database():
     """Initialize the DuckDB database with required tables."""
