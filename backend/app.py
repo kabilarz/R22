@@ -26,6 +26,9 @@ app = FastAPI(title="Statistical Analysis API", version="1.0.0")
 # Create API router
 api_router = APIRouter(prefix="/api")
 
+# Create API router
+api_router = APIRouter(prefix="/api")
+
 # Add CORS middleware to allow frontend connections
 app.add_middleware(
     CORSMiddleware,
