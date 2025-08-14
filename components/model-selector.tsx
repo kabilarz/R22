@@ -207,30 +207,47 @@ export function ModelSelector({ selectedModel, onModelChange, onModelReady }: Mo
   return (
     <div className="flex items-center gap-2">
       {/* Model Selection */}
-      {isOllamaRunning && installedModels.length > 0 ? (
-        <Select value={selectedModel} onValueChange={onModelChange}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Select AI model" />
-          </SelectTrigger>
-          <SelectContent>
-            {installedModels.map((model) => (
-              <SelectItem key={model} value={model}>
-                <div className="flex items-center gap-2">
-                  <span>{model}</span>
-                  {hardware?.recommended_model === model && (
-                    <Badge variant="secondary" className="text-xs">Recommended</Badge>
-                  )}
-                </div>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      ) : (
-        <Button variant="outline" onClick={() => setIsSetupOpen(true)} className="flex items-center gap-2">
-          <AlertCircle className="h-4 w-4" />
-          Setup AI Models
-        </Button>
-      )}
+      <Select value={selectedModel} onValueChange={onModelChange}>
+        <SelectTrigger className="w-64">
+          <SelectValue placeholder="Select AI model" />
+        </SelectTrigger>
+        <SelectContent>
+          {/* Local Models Section */}
+          {installedModels.length > 0 && (
+            <>
+              <div className="px-2 py-1 text-xs font-semibold text-muted-foreground">Local Models</div>
+              {installedModels.map((model) => (
+                <SelectItem key={model} value={model}>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full" />
+                    <span>{model}</span>
+                    {hardware?.recommended_model === model && (
+                      <Badge variant="secondary" className="text-xs">Recommended</Badge>
+                    )}
+                  </div>
+                </SelectItem>
+              ))}
+              <div className="border-t my-1" />
+            </>
+          )}
+          
+          {/* Cloud Models Section */}
+          <div className="px-2 py-1 text-xs font-semibold text-muted-foreground">Cloud Models</div>
+          <SelectItem value="gemini-1.5-flash">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-blue-500 rounded-full" />
+              <span>Google Gemini (Cloud)</span>
+              <Badge variant="outline" className="text-xs">Fallback</Badge>
+            </div>
+          </SelectItem>
+        </SelectContent>
+      </Select>
+
+      {/* Setup Button for Local Models */}
+      <Button variant="outline" size="sm" onClick={() => setIsSetupOpen(true)} className="flex items-center gap-2">
+        <Info className="h-4 w-4" />
+        Setup Local AI
+      </Button>
 
       {/* Setup Dialog */}
       <Dialog open={isSetupOpen} onOpenChange={setIsSetupOpen}>
