@@ -1,6 +1,84 @@
-# Nemo
+# Nemo - AI-Powered Medical Data Analysis Platform
 
-A modern, AI-powered data analysis platform that allows users to upload datasets and interact with them using natural language queries. Built with Next.js 14, TypeScript, and Google Gemini AI.
+A comprehensive, AI-powered desktop application designed specifically for medical researchers and healthcare professionals to analyze datasets using natural language queries and advanced statistical methods. Built with privacy-first principles for secure offline data analysis.
+
+## 🚀 **Phase 2A Complete - Enhanced Medical Statistics**
+
+### **New Statistical Capabilities** 
+Nemo now includes **20 advanced medical statistical tests** commonly used in clinical research and epidemiology:
+
+#### **Core Statistical Tests** ✅
+1. **Descriptive Statistics** - Comprehensive summary statistics with medical interpretations
+2. **Independent t-test** - Compare means between two groups (e.g., treatment vs control)  
+3. **Paired t-test** - Compare before/after measurements in same patients
+4. **One-sample t-test** - Compare sample mean to known population value
+5. **Chi-square test** - Test associations between categorical variables
+6. **Fisher's exact test** - Small sample categorical analysis
+7. **ANOVA (One-way)** - Compare means across multiple treatment groups
+8. **Two-way ANOVA** - Analyze effects of two factors simultaneously
+
+#### **Non-Parametric Tests** ✅  
+9. **Mann-Whitney U test** - Non-parametric alternative to independent t-test
+10. **Wilcoxon signed-rank test** - Non-parametric paired test
+11. **Kruskal-Wallis test** - Non-parametric alternative to one-way ANOVA
+12. **Friedman test** - Non-parametric repeated measures ANOVA
+
+#### **Regression Analysis** ✅
+13. **Linear regression** - Model continuous outcomes
+14. **Multiple linear regression** - Multiple predictors with diagnostics
+15. **Logistic regression** - Model binary outcomes with odds ratios
+
+#### **Survival Analysis** ✅
+16. **Kaplan-Meier survival analysis** - Survival curves with group comparisons
+17. **Cox proportional hazards regression** - Model time-to-event with covariates
+
+#### **Diagnostic & Epidemiological Tests** ✅
+18. **ROC curve analysis** - Evaluate diagnostic test performance
+19. **Sensitivity & Specificity analysis** - Comprehensive diagnostic metrics
+20. **Odds ratio & Relative risk analysis** - Case-control and cohort study analysis
+
+#### **Additional Tests** ✅
+21. **McNemar's test** - Paired nominal data analysis
+22. **Spearman rank correlation** - Non-parametric correlation
+23. **Shapiro-Wilk test** - Test for normality
+24. **Levene's test** - Test equality of variances
+
+### **Enhanced Medical Visualizations** 🎨
+- **Medical Overview Dashboard** - Patient demographics and vital signs summary
+- **Vital Signs Charts** - Interactive charts with clinical reference ranges
+- **Box Plot Visualizations** - Distribution analysis by medical categories  
+- **Demographic Analysis** - Age, gender, race, insurance distributions
+- **Outcomes Analysis** - Treatment success rates with color-coded results
+- **Survival Curves** - Kaplan-Meier plots with group comparisons
+- **ROC Curves** - Diagnostic test evaluation with AUC scores
+
+### **Advanced Libraries Added** 📚
+- **statsmodels** (0.14.1) - Advanced statistical modeling
+- **lifelines** (0.29.0) - Survival analysis capabilities
+- **scikit-learn** (1.3.2) - Machine learning and diagnostic metrics
+- **pingouin** (0.5.4) - Comprehensive statistical functions
+- **plotly** (5.18.0) - Interactive visualization engine
+
+## 🔥 **Key Features**
+
+### **🧬 Medical Data Intelligence**
+- **Automatic Medical Data Detection** - Identifies medical datasets and switches to clinical analysis mode
+- **Clinical Reference Ranges** - Vital signs analysis with normal/abnormal flagging
+- **Medical Terminology** - Recognizes common medical variables (BP, HR, BMI, lab values)
+- **HIPAA-Compatible Privacy** - All data processing can be done completely offline
+
+### **📊 Comprehensive Analysis Suite**
+- **21 Statistical Tests** - From basic descriptives to advanced survival analysis
+- **Interactive Visualizations** - Medical-specific charts with clinical interpretations  
+- **Natural Language Queries** - Ask questions in plain English about your data
+- **Python Code Generation** - AI generates and executes statistical analysis code
+- **Professional Reporting** - Publication-ready results with confidence intervals
+
+### **🔬 Clinical Research Ready**
+- **Survival Analysis** - Kaplan-Meier curves, Cox regression, log-rank tests
+- **Diagnostic Evaluation** - ROC analysis, sensitivity, specificity, predictive values
+- **Epidemiological Studies** - Odds ratios, relative risk, case-control analysis
+- **Clinical Trials** - Randomized controlled trial analysis with effect sizes
 
 ## 🚀 Features
 
