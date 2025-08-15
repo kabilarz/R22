@@ -17,7 +17,7 @@ interface DataVisualizationsProps {
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D']
 
-export function DataVisualizations({ data, fileName }: DataVisualizationsProps) {
+export function DataVisualizations({ data, fileName, analysisResults }: DataVisualizationsProps) {
   if (!data || data.length === 0) {
     return (
       <Card>
@@ -31,6 +31,70 @@ export function DataVisualizations({ data, fileName }: DataVisualizationsProps) 
   const columns = Object.keys(data[0])
   const numericColumns = getNumericColumns(data, columns)
   const categoricalColumns = getCategoricalColumns(data, columns)
+  const isMedicalData = detectMedicalData(columns)
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-2 mb-4">
+        {isMedicalData ? (
+          <>
+            <Heart className="h-5 w-5 text-red-500" />
+            <h3 className="text-lg font-semibold">Medical Data Analysis</h3>
+          </>
+        ) : (
+          <>
+            <BarChart3 className="h-5 w-5" />
+            <h3 className="text-lg font-semibold">Data Visualizations</h3>
+          </>
+        )}
+        <Badge variant="outline">{fileName}</Badge>
+      </div>
+
+      <Tabs defaultValue={isMedicalData ? "medical" : "standard"} className="space-y-4">
+        <TabsList>
+          {isMedicalData && (
+            <TabsTrigger value="medical" className="flex items-center gap-2">
+              <Stethoscope className="h-4 w-4" />
+              Medical Analysis
+            </TabsTrigger>
+          )}
+          <TabsTrigger value="standard" className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" />
+            Standard Charts
+          </TabsTrigger>
+          <TabsTrigger value="summary" className="flex items-center gap-2">
+            <TableIcon className="h-4 w-4" />
+            Data Summary
+          </TabsTrigger>
+        </TabsList>
+
+        {isMedicalData && (
+          <TabsContent value="medical">
+            <MedicalVisualizations data={data} fileName={fileName} analysisResults={analysisResults} />
+          </TabsContent>
+        )}
+
+        <TabsContent value="standard">
+          <StandardVisualizations 
+            data={data} 
+            fileName={fileName} 
+            columns={columns}
+            numericColumns={numericColumns}
+            categoricalColumns={categoricalColumns}
+          />
+        </TabsContent>
+
+        <TabsContent value="summary">
+          <DataSummary data={data} columns={columns} />
+        </TabsContent>
+      </Tabs>
+    </div>
+  )
+}
+
+function StandardVisualizations({ data, fileName, columns, numericColumns, categoricalColumns }: {
+  data: any[], fileName: string, columns: string[], numericColumns: string[], categoricalColumns: string[]
+}) {
 
   return (
     <div className="space-y-6">
