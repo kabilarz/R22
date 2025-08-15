@@ -39,6 +39,30 @@ from medical_statistics_part2 import (
     run_diagnostic_test_analysis
 )
 
+# Import Phase 2B - Comprehensive Advanced Statistics (119 tests)
+from advanced_statistics_part1 import (
+    run_shapiro_wilk_test as advanced_shapiro_wilk, run_kolmogorov_smirnov_test, 
+    run_anderson_darling_test, run_dagostino_pearson_test, run_jarque_bera_test,
+    run_chi_square_gof_test, run_cramer_von_mises_test, run_ks_two_sample_test
+)
+
+from advanced_statistics_part2 import (
+    run_welch_ttest, run_mood_median_test, run_brunner_munzel_test, run_welch_anova,
+    run_tukey_hsd_test, run_bonferroni_correction, run_holm_bonferroni_correction
+)
+
+from advanced_statistics_part3 import (
+    run_kendall_tau_test, run_point_biserial_correlation, run_phi_coefficient,
+    run_cramers_v, run_mantel_haenszel_test, run_cochran_q_test,
+    run_multinomial_logistic_regression
+)
+
+# Import comprehensive visualization system
+from comprehensive_visualizations import (
+    generate_histogram, generate_density_plot, generate_box_plot,
+    generate_violin_plot, generate_qq_plot, generate_pareto_chart
+)
+
 app = FastAPI(title="Statistical Analysis API", version="1.0.0")
 
 # Create API router
