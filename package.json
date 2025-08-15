@@ -4,12 +4,17 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build && next export",
     "start": "next start",
     "db:studio": "prisma studio",
     "db:seed": "prisma db seed",
     "tauri": "tauri dev",
-    "tauri:build": "tauri build"
+    "tauri:build": "tauri build",
+    "tauri:dev": "tauri dev",
+    "build:desktop": "npm run build && npm run tauri:build",
+    "setup:ollama": "node scripts/setup-ollama.bat",
+    "verify": "python scripts/verify-installation.py",
+    "build:production": "scripts/build-production.bat"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
