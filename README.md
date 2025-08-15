@@ -273,9 +273,15 @@ This project is built with modern best practices:
 
 This project is licensed under the MIT License.
 
-## 📚 Documentation
+## 📚 Complete Documentation Suite
 
 Comprehensive documentation is available to help you get the most out of Nemo:
+
+### 🎯 Production Deployment
+- **[project-compass.json](project-compass.json)** - Complete installation and configuration guide in JSON format
+- **[DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)** - Step-by-step production deployment instructions
+- **[PRODUCTION_SETUP.md](PRODUCTION_SETUP.md)** - Advanced setup and customization guide
+- **[INSTALLATION_CHECKLIST.md](INSTALLATION_CHECKLIST.md)** - Quality assurance and testing checklist
 
 ### 📖 User Resources
 - **[User Guide](docs/USER_GUIDE.md)** - Complete step-by-step instructions for all features
@@ -284,12 +290,90 @@ Comprehensive documentation is available to help you get the most out of Nemo:
 
 ### 🔧 Developer Resources  
 - **[Technical Documentation](docs/TECHNICAL_DOCUMENTATION.md)** - Architecture, data flow, and APIs
+- **[Ollama Setup Guide](OLLAMA_SETUP.md)** - Local AI integration instructions
 - **[Roadmap](docs/ROADMAP.md)** - Future features and local LLM integration plans
 
-### 🚀 Getting Help
-- **In-App Help**: Click the help icon (?) in the left panel for quick access to all documentation
-- **Interactive Tooltips**: Hover over features for contextual help
-- **Quick Start Tips**: Built-in guidance for new users
+### 🚀 Getting Started Scripts
+- **[Development Setup](scripts/setup-development.bat)** - Automated development environment setup
+- **[Production Build](scripts/build-production.bat)** - Automated production build process
+- **[Ollama Setup](scripts/setup-ollama.bat)** - Download and configure Ollama binaries
+- **[Installation Verification](scripts/verify-installation.py)** - System verification and testing
+
+### 🛠️ Configuration Files
+- **[Environment Template](.env.example)** - Environment variable configuration template
+- **[Tauri Configuration](src-tauri/tauri.conf.json)** - Desktop application configuration
+- **[Python Dependencies](backend/requirements.txt)** - Backend dependencies list
+
+## 🚀 Quick Start Guide
+
+### For End Users (Production Installation)
+1. **Download** the installer: `nemo-setup-windows-x64.exe`
+2. **Install Python** 3.8-3.11 from [python.org](https://python.org)
+3. **Run installer** as Administrator
+4. **Launch Nemo** and follow the setup wizard
+5. **Download AI models** via the "Setup Local AI" button
+
+📖 **[Complete Installation Guide](project-compass.json)**
+
+### For Developers  
+1. **Run setup script**: `scripts\setup-development.bat`
+2. **Configure API key**: Edit `.env` file (optional)
+3. **Start development**: `npm run tauri:dev`
+
+📖 **[Development Setup Guide](PRODUCTION_SETUP.md)**
+
+## 🎯 Desktop Application Features
+
+### 🏗️ Production Ready
+- **Windows Installer**: Professional NSIS installer with shortcuts
+- **Bundled Dependencies**: Ollama AI runtime and Python backend included
+- **Offline Capability**: Complete functionality without internet connection
+- **Auto-Updates**: Built-in update system for seamless upgrades
+- **Enterprise Support**: MSI packages and silent installation options
+
+### 🤖 AI Integration
+- **Local AI Models**: TinyLlama, Phi-3, BioMistral bundled and ready
+- **Hardware Optimization**: Smart model recommendations based on system RAM
+- **Cloud Fallback**: Google Gemini integration for enhanced capabilities
+- **Privacy First**: All data processing can be done completely offline
+
+### 📊 Professional Data Analysis
+- **SPSS-Style Editor**: Professional data editing and variable management
+- **Multiple Formats**: CSV, Excel, JSON file support with drag-and-drop
+- **Python Integration**: Execute generated code directly in the interface
+- **Advanced Visualizations**: Interactive charts and statistical summaries
+
+### 🔐 Security & Privacy
+- **Local Processing**: Medical data never leaves your device
+- **Encrypted Storage**: Secure configuration and credential management
+- **No Telemetry**: Privacy-focused design with no usage tracking
+- **HIPAA Compatible**: Suitable for medical and healthcare data analysis
+
+## 🎉 What's New in Production Version
+
+### ✅ Desktop Application
+- Native Windows application built with Tauri
+- Professional installer with proper file associations
+- System tray integration and desktop shortcuts
+- Optimized performance for desktop usage
+
+### ✅ Bundled AI Runtime
+- Complete Ollama installation included in installer
+- No separate AI software installation required
+- Automatic model management and updates
+- Hardware-based performance optimization
+
+### ✅ Enhanced Documentation
+- Comprehensive installation guides for all user types
+- Step-by-step troubleshooting procedures
+- Quality assurance checklists for deployment
+- Professional support documentation
+
+### ✅ Production Scripts
+- Automated development environment setup
+- One-click production build process
+- System verification and testing tools
+- Deployment quality assurance scripts
 
 ## 🆘 Support
 
