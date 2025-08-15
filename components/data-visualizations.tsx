@@ -4,8 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts'
-import { TrendingUp, BarChart3, PieChart as PieChartIcon, Table as TableIcon } from 'lucide-react'
+import { TrendingUp, BarChart3, PieChart as PieChartIcon, Table as TableIcon, Heart, Stethoscope } from 'lucide-react'
+import { MedicalVisualizations } from './medical-visualizations'
 
 interface DataVisualizationsProps {
   data: any[]
