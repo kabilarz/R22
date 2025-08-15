@@ -479,6 +479,607 @@ except Exception as e:
 # Include the API router in the main app
 app.include_router(api_router)
 
+# ========================
+# PHASE 2A: MEDICAL STATISTICS API ENDPOINTS
+# ========================
+
+class PairedTTestRequest(BaseModel):
+    chat_id: str
+    dataset_id: str
+    before_col: str
+    after_col: str
+    where_sql: Optional[str] = None
+
+class OneSampleTTestRequest(BaseModel):
+    chat_id: str
+    dataset_id: str
+    column: str
+    test_value: float
+    where_sql: Optional[str] = None
+
+class MannWhitneyRequest(BaseModel):
+    chat_id: str
+    dataset_id: str
+    group_col: str
+    value_col: str
+    where_sql: Optional[str] = None
+
+class WilcoxonRequest(BaseModel):
+    chat_id: str
+    dataset_id: str
+    before_col: str
+    after_col: str
+    where_sql: Optional[str] = None
+
+class FisherExactRequest(BaseModel):
+    chat_id: str
+    dataset_id: str
+    col1: str
+    col2: str
+    where_sql: Optional[str] = None
+
+class KruskalWallisRequest(BaseModel):
+    chat_id: str
+    dataset_id: str
+    group_col: str
+    value_col: str
+    where_sql: Optional[str] = None
+
+class LinearRegressionRequest(BaseModel):
+    chat_id: str
+    dataset_id: str
+    x_col: str
+    y_col: str
+    where_sql: Optional[str] = None
+
+class LogisticRegressionRequest(BaseModel):
+    chat_id: str
+    dataset_id: str
+    x_col: str
+    y_col: str
+    where_sql: Optional[str] = None
+
+class McNemarRequest(BaseModel):
+    chat_id: str
+    dataset_id: str
+    before_col: str
+    after_col: str
+    where_sql: Optional[str] = None
+
+class TwoWayAnovaRequest(BaseModel):
+    chat_id: str
+    dataset_id: str
+    factor1_col: str
+    factor2_col: str
+    dependent_col: str
+    where_sql: Optional[str] = None
+
+class KaplanMeierRequest(BaseModel):
+    chat_id: str
+    dataset_id: str
+    duration_col: str
+    event_col: str
+    group_col: Optional[str] = None
+    where_sql: Optional[str] = None
+
+class CoxRegressionRequest(BaseModel):
+    chat_id: str
+    dataset_id: str
+    duration_col: str
+    event_col: str
+    covariate_cols: List[str]
+    where_sql: Optional[str] = None
+
+class ROCAnalysisRequest(BaseModel):
+    chat_id: str
+    dataset_id: str
+    predictor_col: str
+    outcome_col: str
+    where_sql: Optional[str] = None
+
+class MultipleRegressionRequest(BaseModel):
+    chat_id: str
+    dataset_id: str
+    dependent_col: str
+    independent_cols: List[str]
+    where_sql: Optional[str] = None
+
+class ShapiroWilkRequest(BaseModel):
+    dataset_id: str
+    column: str
+    where_sql: Optional[str] = None
+
+class LeveneTestRequest(BaseModel):
+    dataset_id: str
+    group_col: str
+    value_col: str
+    where_sql: Optional[str] = None
+
+class SpearmanRequest(BaseModel):
+    dataset_id: str
+    col1: str
+    col2: str
+    where_sql: Optional[str] = None
+
+class FriedmanRequest(BaseModel):
+    chat_id: str
+    dataset_id: str
+    subject_col: str
+    condition_col: str
+    value_col: str
+    where_sql: Optional[str] = None
+
+class OddsRatioRequest(BaseModel):
+    dataset_id: str
+    exposure_col: str
+    outcome_col: str
+    where_sql: Optional[str] = None
+
+class DiagnosticTestRequest(BaseModel):
+    dataset_id: str
+    test_col: str
+    gold_standard_col: str
+    where_sql: Optional[str] = None
+
+# Phase 2A Medical Statistics Endpoints
+
+@api_router.post("/analysis/paired-ttest")
+async def perform_paired_ttest(request: PairedTTestRequest):
+    """Perform paired t-test analysis."""
+    try:
+        result = run_paired_ttest(
+            dataset_id=request.dataset_id,
+            before_col=request.before_col,
+            after_col=request.after_col,
+            where_sql=request.where_sql
+        )
+        
+        params = {
+            "dataset_id": request.dataset_id,
+            "before_col": request.before_col,
+            "after_col": request.after_col,
+            "where_sql": request.where_sql
+        }
+        
+        run_id = log_run(
+            chat_id=request.chat_id,
+            dataset_id=request.dataset_id,
+            analysis="paired_ttest",
+            params_dict=params,
+            result_dict=result
+        )
+        
+        return {"run_id": run_id, **result}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to perform paired t-test: {str(e)}")
+
+@api_router.post("/analysis/one-sample-ttest")
+async def perform_one_sample_ttest(request: OneSampleTTestRequest):
+    """Perform one-sample t-test analysis."""
+    try:
+        result = run_one_sample_ttest(
+            dataset_id=request.dataset_id,
+            column=request.column,
+            test_value=request.test_value,
+            where_sql=request.where_sql
+        )
+        
+        params = {
+            "dataset_id": request.dataset_id,
+            "column": request.column,
+            "test_value": request.test_value,
+            "where_sql": request.where_sql
+        }
+        
+        run_id = log_run(
+            chat_id=request.chat_id,
+            dataset_id=request.dataset_id,
+            analysis="one_sample_ttest",
+            params_dict=params,
+            result_dict=result
+        )
+        
+        return {"run_id": run_id, **result}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to perform one-sample t-test: {str(e)}")
+
+@api_router.post("/analysis/mann-whitney")
+async def perform_mann_whitney(request: MannWhitneyRequest):
+    """Perform Mann-Whitney U test."""
+    try:
+        result = run_mann_whitney_u_test(
+            dataset_id=request.dataset_id,
+            group_col=request.group_col,
+            value_col=request.value_col,
+            where_sql=request.where_sql
+        )
+        
+        params = {
+            "dataset_id": request.dataset_id,
+            "group_col": request.group_col,
+            "value_col": request.value_col,
+            "where_sql": request.where_sql
+        }
+        
+        run_id = log_run(
+            chat_id=request.chat_id,
+            dataset_id=request.dataset_id,
+            analysis="mann_whitney",
+            params_dict=params,
+            result_dict=result
+        )
+        
+        return {"run_id": run_id, **result}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to perform Mann-Whitney test: {str(e)}")
+
+@api_router.post("/analysis/wilcoxon")
+async def perform_wilcoxon(request: WilcoxonRequest):
+    """Perform Wilcoxon signed-rank test."""
+    try:
+        result = run_wilcoxon_signed_rank_test(
+            dataset_id=request.dataset_id,
+            before_col=request.before_col,
+            after_col=request.after_col,
+            where_sql=request.where_sql
+        )
+        
+        params = {
+            "dataset_id": request.dataset_id,
+            "before_col": request.before_col,
+            "after_col": request.after_col,
+            "where_sql": request.where_sql
+        }
+        
+        run_id = log_run(
+            chat_id=request.chat_id,
+            dataset_id=request.dataset_id,
+            analysis="wilcoxon",
+            params_dict=params,
+            result_dict=result
+        )
+        
+        return {"run_id": run_id, **result}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to perform Wilcoxon test: {str(e)}")
+
+@api_router.post("/analysis/fisher-exact")
+async def perform_fisher_exact(request: FisherExactRequest):
+    """Perform Fisher's exact test."""
+    try:
+        result = run_fisher_exact_test(
+            dataset_id=request.dataset_id,
+            col1=request.col1,
+            col2=request.col2,
+            where_sql=request.where_sql
+        )
+        
+        params = {
+            "dataset_id": request.dataset_id,
+            "col1": request.col1,
+            "col2": request.col2,
+            "where_sql": request.where_sql
+        }
+        
+        run_id = log_run(
+            chat_id=request.chat_id,
+            dataset_id=request.dataset_id,
+            analysis="fisher_exact",
+            params_dict=params,
+            result_dict=result
+        )
+        
+        return {"run_id": run_id, **result}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to perform Fisher's exact test: {str(e)}")
+
+@api_router.post("/analysis/kruskal-wallis")
+async def perform_kruskal_wallis(request: KruskalWallisRequest):
+    """Perform Kruskal-Wallis test."""
+    try:
+        result = run_kruskal_wallis_test(
+            dataset_id=request.dataset_id,
+            group_col=request.group_col,
+            value_col=request.value_col,
+            where_sql=request.where_sql
+        )
+        
+        params = {
+            "dataset_id": request.dataset_id,
+            "group_col": request.group_col,
+            "value_col": request.value_col,
+            "where_sql": request.where_sql
+        }
+        
+        run_id = log_run(
+            chat_id=request.chat_id,
+            dataset_id=request.dataset_id,
+            analysis="kruskal_wallis",
+            params_dict=params,
+            result_dict=result
+        )
+        
+        return {"run_id": run_id, **result}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to perform Kruskal-Wallis test: {str(e)}")
+
+@api_router.post("/analysis/linear-regression")
+async def perform_linear_regression(request: LinearRegressionRequest):
+    """Perform simple linear regression."""
+    try:
+        result = run_linear_regression(
+            dataset_id=request.dataset_id,
+            x_col=request.x_col,
+            y_col=request.y_col,
+            where_sql=request.where_sql
+        )
+        
+        params = {
+            "dataset_id": request.dataset_id,
+            "x_col": request.x_col,
+            "y_col": request.y_col,
+            "where_sql": request.where_sql
+        }
+        
+        run_id = log_run(
+            chat_id=request.chat_id,
+            dataset_id=request.dataset_id,
+            analysis="linear_regression",
+            params_dict=params,
+            result_dict=result
+        )
+        
+        return {"run_id": run_id, **result}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to perform linear regression: {str(e)}")
+
+@api_router.post("/analysis/logistic-regression")
+async def perform_logistic_regression(request: LogisticRegressionRequest):
+    """Perform logistic regression."""
+    try:
+        result = run_logistic_regression(
+            dataset_id=request.dataset_id,
+            x_col=request.x_col,
+            y_col=request.y_col,
+            where_sql=request.where_sql
+        )
+        
+        params = {
+            "dataset_id": request.dataset_id,
+            "x_col": request.x_col,
+            "y_col": request.y_col,
+            "where_sql": request.where_sql
+        }
+        
+        run_id = log_run(
+            chat_id=request.chat_id,
+            dataset_id=request.dataset_id,
+            analysis="logistic_regression",
+            params_dict=params,
+            result_dict=result
+        )
+        
+        return {"run_id": run_id, **result}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to perform logistic regression: {str(e)}")
+
+@api_router.post("/analysis/kaplan-meier")
+async def perform_kaplan_meier(request: KaplanMeierRequest):
+    """Perform Kaplan-Meier survival analysis."""
+    try:
+        result = run_kaplan_meier_analysis(
+            dataset_id=request.dataset_id,
+            duration_col=request.duration_col,
+            event_col=request.event_col,
+            group_col=request.group_col,
+            where_sql=request.where_sql
+        )
+        
+        params = {
+            "dataset_id": request.dataset_id,
+            "duration_col": request.duration_col,
+            "event_col": request.event_col,
+            "group_col": request.group_col,
+            "where_sql": request.where_sql
+        }
+        
+        run_id = log_run(
+            chat_id=request.chat_id,
+            dataset_id=request.dataset_id,
+            analysis="kaplan_meier",
+            params_dict=params,
+            result_dict=result
+        )
+        
+        return {"run_id": run_id, **result}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to perform Kaplan-Meier analysis: {str(e)}")
+
+@api_router.post("/analysis/roc")
+async def perform_roc_analysis(request: ROCAnalysisRequest):
+    """Perform ROC curve analysis."""
+    try:
+        result = run_roc_analysis(
+            dataset_id=request.dataset_id,
+            predictor_col=request.predictor_col,
+            outcome_col=request.outcome_col,
+            where_sql=request.where_sql
+        )
+        
+        params = {
+            "dataset_id": request.dataset_id,
+            "predictor_col": request.predictor_col,
+            "outcome_col": request.outcome_col,
+            "where_sql": request.where_sql
+        }
+        
+        run_id = log_run(
+            chat_id=request.chat_id,
+            dataset_id=request.dataset_id,
+            analysis="roc_analysis",
+            params_dict=params,
+            result_dict=result
+        )
+        
+        return {"run_id": run_id, **result}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to perform ROC analysis: {str(e)}")
+
+@api_router.post("/analysis/multiple-regression")
+async def perform_multiple_regression(request: MultipleRegressionRequest):
+    """Perform multiple linear regression."""
+    try:
+        result = run_multiple_regression(
+            dataset_id=request.dataset_id,
+            dependent_col=request.dependent_col,
+            independent_cols=request.independent_cols,
+            where_sql=request.where_sql
+        )
+        
+        params = {
+            "dataset_id": request.dataset_id,
+            "dependent_col": request.dependent_col,
+            "independent_cols": request.independent_cols,
+            "where_sql": request.where_sql
+        }
+        
+        run_id = log_run(
+            chat_id=request.chat_id,
+            dataset_id=request.dataset_id,
+            analysis="multiple_regression",
+            params_dict=params,
+            result_dict=result
+        )
+        
+        return {"run_id": run_id, **result}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to perform multiple regression: {str(e)}")
+
+# Additional utility endpoints for normality and variance testing
+@api_router.post("/analysis/shapiro-wilk")
+async def perform_shapiro_wilk(request: ShapiroWilkRequest):
+    """Perform Shapiro-Wilk test for normality."""
+    try:
+        result = run_shapiro_wilk_test(
+            dataset_id=request.dataset_id,
+            column=request.column,
+            where_sql=request.where_sql
+        )
+        
+        return result
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to perform Shapiro-Wilk test: {str(e)}")
+
+@api_router.post("/analysis/levene-test")
+async def perform_levene_test(request: LeveneTestRequest):
+    """Perform Levene's test for equality of variances."""
+    try:
+        result = run_levene_test(
+            dataset_id=request.dataset_id,
+            group_col=request.group_col,
+            value_col=request.value_col,
+            where_sql=request.where_sql
+        )
+        
+        return result
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to perform Levene's test: {str(e)}")
+
+@api_router.post("/analysis/spearman")
+async def perform_spearman_correlation(request: SpearmanRequest):
+    """Perform Spearman rank correlation."""
+    try:
+        result = run_spearman_correlation(
+            dataset_id=request.dataset_id,
+            col1=request.col1,
+            col2=request.col2,
+            where_sql=request.where_sql
+        )
+        
+        return result
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to perform Spearman correlation: {str(e)}")
+
+@api_router.post("/analysis/odds-ratio")
+async def perform_odds_ratio_analysis(request: OddsRatioRequest):
+    """Calculate odds ratio and relative risk."""
+    try:
+        result = run_odds_ratio_analysis(
+            dataset_id=request.dataset_id,
+            exposure_col=request.exposure_col,
+            outcome_col=request.outcome_col,
+            where_sql=request.where_sql
+        )
+        
+        return result
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to perform odds ratio analysis: {str(e)}")
+
+@api_router.post("/analysis/diagnostic-test")
+async def perform_diagnostic_test_analysis(request: DiagnosticTestRequest):
+    """Calculate sensitivity, specificity, and diagnostic test measures."""
+    try:
+        result = run_diagnostic_test_analysis(
+            dataset_id=request.dataset_id,
+            test_col=request.test_col,
+            gold_standard_col=request.gold_standard_col,
+            where_sql=request.where_sql
+        )
+        
+        return result
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to perform diagnostic test analysis: {str(e)}")
+
+# Get all available statistical tests
+@api_router.get("/analysis/available-tests")
+async def get_available_statistical_tests():
+    """Get list of all available statistical tests."""
+    return {
+        "basic_tests": [
+            "descriptive",
+            "ttest", 
+            "chisquare",
+            "correlation",
+            "anova"
+        ],
+        "medical_tests_phase_2a": [
+            "paired-ttest",
+            "one-sample-ttest", 
+            "mann-whitney",
+            "wilcoxon",
+            "fisher-exact",
+            "kruskal-wallis",
+            "linear-regression",
+            "logistic-regression",
+            "kaplan-meier",
+            "roc",
+            "multiple-regression",
+            "shapiro-wilk",
+            "levene-test",
+            "spearman",
+            "odds-ratio",
+            "diagnostic-test"
+        ],
+        "total_tests": 21,
+        "phase": "2A Complete"
+    }
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
