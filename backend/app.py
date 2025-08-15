@@ -25,6 +25,20 @@ from analyses import (
     run_chi_square_test, run_correlation_analysis, run_anova
 )
 
+# Import Phase 2A medical statistics functions
+from medical_statistics import (
+    run_paired_ttest, run_one_sample_ttest, run_mann_whitney_u_test, 
+    run_wilcoxon_signed_rank_test, run_fisher_exact_test, run_kruskal_wallis_test,
+    run_linear_regression, run_logistic_regression, run_mcnemar_test, run_two_way_anova
+)
+
+from medical_statistics_part2 import (
+    run_kaplan_meier_analysis, run_cox_regression, run_roc_analysis,
+    run_multiple_regression, run_shapiro_wilk_test, run_levene_test,
+    run_spearman_correlation, run_friedman_test, run_odds_ratio_analysis,
+    run_diagnostic_test_analysis
+)
+
 app = FastAPI(title="Statistical Analysis API", version="1.0.0")
 
 # Create API router
