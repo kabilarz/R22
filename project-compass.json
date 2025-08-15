@@ -1,0 +1,305 @@
+{
+  "name": "Nemo - AI Medical Data Analysis Platform",
+  "version": "1.0.0",
+  "description": "Desktop application for medical researchers to analyze datasets using natural language queries and local AI models. Built for privacy and offline operation.",
+  "platform": "Windows",
+  "architecture": "x64",
+  "requirements": {
+    "system": {
+      "os": "Windows 10 or later (64-bit)",
+      "ram": "Minimum 4GB RAM (8GB+ recommended for AI models)",
+      "disk": "2GB free disk space (additional 4-8GB for AI models)",
+      "network": "Internet connection required for initial setup and AI model downloads"
+    },
+    "software": {
+      "node": "Node.js 18.x or later",
+      "python": "Python 3.8 to 3.11 (3.12 not yet supported)",
+      "rust": "Rust toolchain (for building from source only)"
+    }
+  },
+  "installation": {
+    "production": {
+      "steps": [
+        {
+          "step": 1,
+          "title": "Download Application Package",
+          "description": "Download the Nemo installer from the releases page",
+          "commands": [
+            "Download nemo-setup-windows-x64.exe from GitHub releases",
+            "Verify file integrity (SHA256 hash provided)"
+          ],
+          "notes": "The installer includes the desktop app and Ollama binaries"
+        },
+        {
+          "step": 2,
+          "title": "Install Python Dependencies",
+          "description": "Python is required for data analysis backend",
+          "commands": [
+            "Download Python 3.11 from https://python.org (if not installed)",
+            "Run: python --version (should show 3.8-3.11)",
+            "Run: pip install --upgrade pip"
+          ],
+          "verification": "python --version && pip --version",
+          "troubleshooting": "If Python is not found, add it to system PATH"
+        },
+        {
+          "step": 3,
+          "title": "Run Application Installer",
+          "description": "Install Nemo desktop application",
+          "commands": [
+            "Run nemo-setup-windows-x64.exe as Administrator",
+            "Follow installation wizard prompts",
+            "Choose installation directory (default: C:\\Program Files\\Nemo)"
+          ],
+          "notes": "The installer will create desktop shortcuts and register file associations"
+        },
+        {
+          "step": 4,
+          "title": "Initial Setup and AI Model Configuration",
+          "description": "Configure AI models for data analysis",
+          "commands": [
+            "Launch Nemo from Start Menu or Desktop",
+            "Click 'Setup Local AI' button in the application",
+            "Select recommended AI models based on your system RAM:",
+            "- 4GB RAM: TinyLlama (1GB download)",
+            "- 6GB+ RAM: Phi-3 Mini (2GB download)",
+            "- 8GB+ RAM: BioMistral Medical (4GB download)"
+          ],
+          "verification": "AI models appear in dropdown menu",
+          "notes": "Models download automatically with progress tracking"
+        },
+        {
+          "step": 5,
+          "title": "Verify Installation",
+          "description": "Test all components are working",
+          "commands": [
+            "Upload a sample CSV file",
+            "Ask a question about the data",
+            "Verify Python code execution works",
+            "Test both local AI and cloud backup (if configured)"
+          ],
+          "verification": "All features respond without errors"
+        }
+      ]
+    },
+    "development": {
+      "prerequisites": [
+        "Git for version control",
+        "Node.js 18+ and npm/yarn",
+        "Python 3.8-3.11 with pip",
+        "Rust toolchain (latest stable)",
+        "Tauri CLI (@tauri-apps/cli)"
+      ],
+      "steps": [
+        {
+          "step": 1,
+          "title": "Clone Repository",
+          "commands": [
+            "git clone <repository-url>",
+            "cd nemo"
+          ]
+        },
+        {
+          "step": 2,
+          "title": "Install Frontend Dependencies",
+          "commands": [
+            "npm install",
+            "npm install -g @tauri-apps/cli"
+          ]
+        },
+        {
+          "step": 3,
+          "title": "Install Python Backend Dependencies",
+          "commands": [
+            "cd backend",
+            "pip install -r requirements.txt",
+            "cd .."
+          ]
+        },
+        {
+          "step": 4,
+          "title": "Download Ollama Binaries (for bundling)",
+          "commands": [
+            "mkdir -p src-tauri/resources/ollama",
+            "curl -L https://ollama.ai/download/ollama-windows-amd64.exe -o src-tauri/resources/ollama/ollama.exe"
+          ]
+        },
+        {
+          "step": 5,
+          "title": "Configure Environment",
+          "commands": [
+            "cp .env.example .env",
+            "# Add NEXT_PUBLIC_GEMINI_API_KEY=your_key_here (optional)"
+          ]
+        },
+        {
+          "step": 6,
+          "title": "Run Development Server",
+          "commands": [
+            "npm run tauri dev"
+          ]
+        }
+      ]
+    }
+  },
+  "configuration": {
+    "environment_variables": {
+      "NEXT_PUBLIC_GEMINI_API_KEY": {
+        "description": "Google Gemini AI API key for cloud fallback",
+        "required": false,
+        "source": "https://makersuite.google.com/app/apikey"
+      }
+    },
+    "ai_models": {
+      "local": {
+        "tinyllama": {
+          "size": "1GB",
+          "ram_requirement": "4GB",
+          "description": "Lightweight model for basic analysis"
+        },
+        "phi3:mini": {
+          "size": "2GB",
+          "ram_requirement": "6GB",
+          "description": "Balanced performance model"
+        },
+        "biomistral:7b": {
+          "size": "4GB",
+          "ram_requirement": "8GB",
+          "description": "Medical-specialized analysis model"
+        }
+      },
+      "cloud": {
+        "gemini-1.5-flash": {
+          "provider": "Google",
+          "requires_api_key": true,
+          "description": "Fast cloud-based analysis"
+        }
+      }
+    }
+  },
+  "usage": {
+    "quick_start": [
+      "1. Launch Nemo application",
+      "2. Upload your CSV, Excel, or JSON dataset",
+      "3. Click on uploaded file to select it",
+      "4. Ask questions in natural language",
+      "5. Get AI-powered insights and Python code",
+      "6. Execute code directly in the interface"
+    ],
+    "features": {
+      "data_upload": "Drag-and-drop or browse CSV, Excel, JSON files",
+      "ai_analysis": "Natural language queries with local or cloud AI",
+      "code_execution": "Run Python analysis code directly",
+      "data_editing": "Professional SPSS-style data editor",
+      "visualizations": "Automatic charts and statistical summaries",
+      "privacy": "All data processing can be done offline"
+    }
+  },
+  "troubleshooting": {
+    "common_issues": {
+      "python_not_found": {
+        "problem": "Application reports 'Python not found'",
+        "solutions": [
+          "Install Python 3.8-3.11 from python.org",
+          "Add Python to system PATH during installation",
+          "Restart the application after Python installation",
+          "Verify: Open Command Prompt, run 'python --version'"
+        ]
+      },
+      "ai_models_not_loading": {
+        "problem": "Local AI models not appearing or failing",
+        "solutions": [
+          "Ensure sufficient RAM for selected model",
+          "Check internet connection for model downloads",
+          "Restart the application",
+          "Try smaller model (TinyLlama) first",
+          "Use cloud fallback (Gemini) if configured"
+        ]
+      },
+      "backend_connection_error": {
+        "problem": "Cannot connect to analysis backend",
+        "solutions": [
+          "Ensure Python dependencies are installed",
+          "Check if Python backend port (8001) is blocked",
+          "Restart the application",
+          "Run Windows Defender exception for Nemo folder"
+        ]
+      },
+      "large_dataset_performance": {
+        "problem": "Slow performance with large datasets",
+        "solutions": [
+          "Use datasets under 100MB for optimal performance",
+          "Close other resource-intensive applications",
+          "Use more powerful AI models if RAM allows",
+          "Consider data sampling for initial exploration"
+        ]
+      }
+    }
+  },
+  "building": {
+    "production_build": {
+      "description": "Build desktop application for distribution",
+      "steps": [
+        {
+          "step": 1,
+          "title": "Prepare Build Environment",
+          "commands": [
+            "npm install",
+            "cd backend && pip install -r requirements.txt && cd .."
+          ]
+        },
+        {
+          "step": 2,
+          "title": "Download Ollama Binaries",
+          "commands": [
+            "mkdir -p src-tauri/resources/ollama",
+            "curl -L https://ollama.ai/download/ollama-windows-amd64.exe -o src-tauri/resources/ollama/ollama.exe"
+          ]
+        },
+        {
+          "step": 3,
+          "title": "Build Application",
+          "commands": [
+            "npm run tauri build"
+          ]
+        },
+        {
+          "step": 4,
+          "title": "Locate Built Application",
+          "commands": [
+            "# Installer: src-tauri/target/release/bundle/nsis/nemo_1.0.0_x64-setup.exe",
+            "# Portable: src-tauri/target/release/nemo.exe"
+          ]
+        }
+      ]
+    }
+  },
+  "deployment": {
+    "packaging": {
+      "installer_size": "~150MB (including Ollama)",
+      "installation_size": "~300MB",
+      "additional_models": "1-4GB per AI model"
+    },
+    "distribution": {
+      "methods": [
+        "Direct download from website",
+        "GitHub releases",
+        "Microsoft Store (future)",
+        "Enterprise distribution via MSI"
+      ]
+    }
+  },
+  "support": {
+    "documentation": {
+      "user_guide": "docs/USER_GUIDE.md",
+      "technical_docs": "docs/TECHNICAL_DOCUMENTATION.md",
+      "faq": "docs/FAQ.md",
+      "roadmap": "docs/ROADMAP.md"
+    },
+    "logs": {
+      "application": "%APPDATA%\\Nemo\\logs\\",
+      "tauri": "Check Developer Console (Ctrl+Shift+I)",
+      "python": "Backend logs in application console"
+    }
+  }
+}
