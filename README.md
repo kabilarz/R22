@@ -55,12 +55,41 @@ A modern, AI-powered data analysis platform that allows users to upload datasets
 
 ## 🚀 Getting Started
 
-### Prerequisites
+### 🖥️ Production Installation (Windows Desktop App)
+
+**For end users who want to install and use Nemo:**
+
+1. **Download the Desktop App**
+   - Download `nemo-setup-windows-x64.exe` from releases
+   - Run installer as Administrator
+   - Follow installation wizard
+
+2. **Install Python** (Required for data analysis)
+   ```bash
+   # Download Python 3.8-3.11 from https://python.org
+   # Verify installation:
+   python --version
+   pip --version
+   ```
+
+3. **Launch and Setup**
+   - Open Nemo from Start Menu or Desktop
+   - Click "Setup Local AI" to download AI models
+   - Upload your first dataset and start analyzing!
+
+📖 **[Complete Installation Guide](DEPLOYMENT_GUIDE.md)** | 📋 **[project-compass.json](project-compass.json)** - Detailed setup instructions
+
+### 🛠️ Development Setup
+
+**For developers who want to build from source:**
+
+#### Prerequisites
 - Node.js 18+ installed
-- Python 3.7+ installed (for code execution in Python Sandbox)
+- Python 3.8-3.11 installed (Python 3.12 not yet supported)
+- Rust toolchain (latest stable)
 - Google Gemini AI API key (optional but recommended for full functionality)
 
-### Installation
+#### Installation Steps
 
 1. **Clone the repository**
    ```bash
@@ -68,15 +97,30 @@ A modern, AI-powered data analysis platform that allows users to upload datasets
    cd nemo
    ```
 
-2. **Install dependencies**
+2. **Install frontend dependencies**
    ```bash
    npm install
+   npm install -g @tauri-apps/cli
    ```
 
-3. **Set up environment variables**
+3. **Install Python backend dependencies**
    ```bash
-   # Optional: Add your Google Gemini AI API key for full AI functionality
-   GEMINI_API_KEY=your_api_key_here
+   cd backend
+   pip install -r requirements.txt
+   cd ..
+   ```
+
+4. **Download Ollama binaries** (for desktop app bundling)
+   ```bash
+   mkdir -p src-tauri/resources/ollama
+   curl -L https://ollama.ai/download/ollama-windows-amd64.exe -o src-tauri/resources/ollama/ollama.exe
+   ```
+
+5. **Set up environment variables**
+   ```bash
+   cp .env.example .env
+   # Optional: Add your Google Gemini AI API key for cloud fallback
+   # NEXT_PUBLIC_GEMINI_API_KEY=your_api_key_here
    ```
    
    To get a Gemini API key:
@@ -84,18 +128,35 @@ A modern, AI-powered data analysis platform that allows users to upload datasets
    - Create a new API key
    - Add it to your `.env` file
 
-4. **Run the development server**
+6. **Run the development server**
    ```bash
+   # For web development:
    npm run dev
+   
+   # For desktop app development:
+   npm run tauri dev
    ```
 
-5. **Open your browser**
-   Navigate to [http://localhost:3000](http://localhost:3000)
+7. **Open the application**
+   - Web: Navigate to [http://localhost:3000](http://localhost:3000)
+   - Desktop: The Tauri app window will open automatically
 
-### Building for Production
+#### Building for Production
+
+**Web Application:**
 ```bash
 npm run build
 npm start
+```
+
+**Desktop Application:**
+```bash
+# Build desktop installer
+npm run tauri build
+
+# Outputs:
+# - Installer: src-tauri/target/release/bundle/nsis/nemo_1.0.0_x64-setup.exe
+# - Portable: src-tauri/target/release/nemo.exe
 ```
 
 ## 📖 How to Use
