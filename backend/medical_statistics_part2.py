@@ -20,6 +20,7 @@ from statsmodels.stats.proportion import proportions_ztest
 from statsmodels.stats.contingency_tables import StratifiedTable
 from statsmodels.stats.diagnostic import het_white, acorr_ljungbox
 from statsmodels.stats.stattools import durbin_watson
+from statsmodels.stats.outliers_influence import variance_inflation_factor
 import pingouin as pg
 from lifelines import KaplanMeierFitter, CoxPHFitter
 from lifelines.statistics import logrank_test
