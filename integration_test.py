@@ -12,7 +12,7 @@ from pathlib import Path
 
 class NemoIntegrationTester:
     def __init__(self):
-        self.backend_url = "https://ai-stats-ollama.preview.emergentagent.com/api"
+        self.backend_url = "https://install-guide-5.preview.emergentagent.com/api"
         self.frontend_url = "http://localhost:3000"
         self.chat_id = None
         self.dataset_id = None
