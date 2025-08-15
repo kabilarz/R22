@@ -41,17 +41,47 @@ A modern, AI-powered data analysis platform that allows users to upload datasets
 - **Data Integration**: Uploaded data automatically available as pandas DataFrame ('df')
 - **Copy & Run**: Copy code from AI responses and execute with one click
 
-## 🛠️ Technology Stack
+## 🚀 Desktop Deployment Features
 
-- **Frontend**: Next.js 14 (App Router), React 18, TypeScript
-- **Styling**: Tailwind CSS, shadcn/ui components
-- **AI Integration**: Google Gemini AI API
-- **Charts**: Recharts for data visualization
-- **State Management**: React hooks (useState, useRef)
-- **File Processing**: Client-side CSV/JSON parsing
-- **Notifications**: Sonner toast library
-- **Markdown Rendering**: React Markdown with syntax highlighting
-- **Code Execution**: Node.js child_process for Python execution
+### 🔧 Bundled Components
+- **Ollama AI Runtime**: Local AI models bundled with the application
+- **Python Backend**: FastAPI server for data analysis
+- **Modern Desktop UI**: Native Windows application with Tauri
+- **Offline Capability**: Full functionality without internet connection
+
+### 🤖 AI Model Support
+- **TinyLlama** (1GB) - Fast, lightweight for basic analysis
+- **Phi-3 Mini** (2GB) - Balanced performance for most tasks  
+- **BioMistral 7B** (4GB) - Medical-specialized analysis
+- **Cloud Fallback** - Google Gemini when local models unavailable
+
+### 📊 Production Features
+- **Privacy First**: All data processing can be done locally
+- **Professional Data Editor**: SPSS-style interface for data cleaning
+- **Automatic Backup**: Cloud processing available as fallback
+- **Enterprise Ready**: MSI installer support for corporate deployment
+
+### 🔐 Security & Privacy
+- **Local Processing**: Data never leaves your device with local AI
+- **Encrypted Storage**: User preferences and API keys securely stored
+- **No Telemetry**: Privacy-focused design with no usage tracking
+- **Medical Compliance**: Suitable for HIPAA-compliant data analysis
+
+## 📋 System Requirements
+
+### Minimum Requirements
+- Windows 10 (64-bit) or Windows 11
+- 4GB RAM (8GB+ recommended for AI models)
+- 2GB free disk space (additional 4-8GB for AI models)
+- Python 3.8-3.11 (bundled in installer or separate installation)
+
+### Recommended Configuration
+- Windows 11 with 16GB RAM
+- SSD storage for optimal performance
+- Internet connection for initial AI model downloads
+- Dedicated graphics card (optional, for enhanced visualization)
+
+---
 
 ## 🚀 Getting Started
 
