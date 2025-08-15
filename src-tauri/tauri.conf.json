@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Nemo",
-  "version": "0.1.0",
-  "identifier": "com.nemo.app",
+  "version": "1.0.0",
+  "identifier": "com.nemo.medicalanalytics",
   "build": {
     "frontendDist": "out",
     "devUrl": "http://localhost:3000",
@@ -12,14 +12,18 @@
   "app": {
     "windows": [
       {
-        "title": "Nemo - Medical Data Analyst",
-        "width": 1200,
-        "height": 800,
-        "minWidth": 800,
-        "minHeight": 600,
+        "title": "Nemo - AI Medical Data Analytics",
+        "width": 1400,
+        "height": 900,
+        "minWidth": 1000,
+        "minHeight": 700,
         "resizable": true,
         "fullscreen": false,
-        "center": true
+        "center": true,
+        "maximized": false,
+        "decorations": true,
+        "transparent": false,
+        "alwaysOnTop": false
       }
     ],
     "security": {
@@ -38,12 +42,83 @@
     ],
     "category": "Productivity",
     "shortDescription": "AI-powered medical data analysis platform",
-    "longDescription": "Nemo is a desktop application for medical researchers to analyze datasets using natural language queries and local AI models. Built for privacy and offline operation.",
+    "longDescription": "Nemo is a desktop application for medical researchers and healthcare professionals to analyze datasets using natural language queries and local AI models. Built for privacy, security, and offline operation with comprehensive data analysis capabilities.",
     "resources": [
-      "resources/ollama/*"
+      "resources/ollama/*",
+      "resources/python/*",
+      "resources/models/*"
     ],
     "externalBin": [
-      "ollama/ollama"
-    ]
+      "resources/ollama/ollama"
+    ],
+    "copyright": "Copyright © 2025 Nemo Analytics. All rights reserved.",
+    "licenseFile": "LICENSE",
+    "windows": {
+      "certificateThumbprint": null,
+      "digestAlgorithm": "sha256",
+      "timestampUrl": "",
+      "tsp": false,
+      "wix": {
+        "language": "en-US",
+        "template": "main.wxs",
+        "fragmentPaths": [],
+        "componentRefs": [],
+        "componentGroupRefs": [],
+        "featureRefs": [],
+        "featureGroupRefs": [],
+        "mergeRefs": [],
+        "skipWebviewInstall": false,
+        "licenseText": null,
+        "enableElevatedUpdateTask": true,
+        "bannerPath": null,
+        "dialogImagePath": null
+      },
+      "nsis": {
+        "template": null,
+        "headerImage": null,
+        "sidebarImage": null,
+        "installerIcon": null,
+        "installMode": "currentUser",
+        "languages": ["English"],
+        "displayLanguageSelector": false,
+        "compressionLevel": "high",
+        "oneClick": false,
+        "allowToChangeInstallationDirectory": true,
+        "perMachine": false,
+        "deleteAppDataOnUninstall": true,
+        "shortcutOnly": false,
+        "createDesktopShortcut": true,
+        "createStartMenuShortcut": true,
+        "license": "LICENSE"
+      }
+    }
+  },
+  "plugins": {
+    "dialog": {
+      "all": true,
+      "ask": true,
+      "confirm": true,
+      "message": true,
+      "open": true,
+      "save": true
+    },
+    "fs": {
+      "all": true,
+      "readFile": true,
+      "writeFile": true,
+      "readDir": true,
+      "copyFile": true,
+      "createDir": true,
+      "removeDir": true,
+      "removeFile": true,
+      "renameFile": true,
+      "exists": true
+    },
+    "shell": {
+      "all": false,
+      "execute": true,
+      "sidecar": true,
+      "open": false
+    }
   }
 }
