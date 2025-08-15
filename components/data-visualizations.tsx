@@ -98,76 +98,6 @@ function StandardVisualizations({ data, fileName, columns, numericColumns, categ
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-2 mb-4">
-        <BarChart3 className="h-5 w-5" />
-        <h3 className="text-lg font-semibold">Data Visualizations</h3>
-        <Badge variant="outline">{fileName}</Badge>
-      </div>
-
-      {/* Summary Statistics */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TableIcon className="h-4 w-4" />
-            Dataset Summary
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold">{data.length}</div>
-              <div className="text-sm text-muted-foreground">Total Rows</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold">{columns.length}</div>
-              <div className="text-sm text-muted-foreground">Columns</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold">{numericColumns.length}</div>
-              <div className="text-sm text-muted-foreground">Numeric Columns</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold">{categoricalColumns.length}</div>
-              <div className="text-sm text-muted-foreground">Categorical Columns</div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Data Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Data Preview (First 10 Rows)</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ScrollArea className="h-80">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  {columns.map(column => (
-                    <TableHead key={column}>{column}</TableHead>
-                  ))}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data.slice(0, 10).map((row, index) => (
-                  <TableRow key={index}>
-                    {columns.map(column => (
-                      <TableCell key={column}>
-                        {String(row[column] || '').length > 50 
-                          ? String(row[column]).substring(0, 50) + '...'
-                          : String(row[column] || '')
-                        }
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </ScrollArea>
-        </CardContent>
-      </Card>
-
       {/* Numeric Data Charts */}
       {numericColumns.length > 0 && (
         <Card>
@@ -268,6 +198,95 @@ function StandardVisualizations({ data, fileName, columns, numericColumns, categ
         </Card>
       )}
     </div>
+  )
+}
+
+function DataSummary({ data, columns }: { data: any[], columns: string[] }) {
+  const numericColumns = getNumericColumns(data, columns)
+  const categoricalColumns = getCategoricalColumns(data, columns)
+
+  return (
+    <div className="space-y-6">
+      {/* Summary Statistics */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TableIcon className="h-4 w-4" />
+            Dataset Summary
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold">{data.length}</div>
+              <div className="text-sm text-muted-foreground">Total Rows</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold">{columns.length}</div>
+              <div className="text-sm text-muted-foreground">Columns</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold">{numericColumns.length}</div>
+              <div className="text-sm text-muted-foreground">Numeric Columns</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold">{categoricalColumns.length}</div>
+              <div className="text-sm text-muted-foreground">Categorical Columns</div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Data Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Data Preview (First 10 Rows)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ScrollArea className="h-80">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  {columns.map(column => (
+                    <TableHead key={column}>{column}</TableHead>
+                  ))}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {data.slice(0, 10).map((row, index) => (
+                  <TableRow key={index}>
+                    {columns.map(column => (
+                      <TableCell key={column}>
+                        {String(row[column] || '').length > 50 
+                          ? String(row[column]).substring(0, 50) + '...'
+                          : String(row[column] || '')
+                        }
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </ScrollArea>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+// Helper function to detect medical data
+function detectMedicalData(columns: string[]): boolean {
+  const medicalKeywords = [
+    'age', 'gender', 'sex', 'patient', 'diagnosis', 'symptom', 'treatment',
+    'bp', 'blood_pressure', 'heart_rate', 'hr', 'temperature', 'temp',
+    'weight', 'height', 'bmi', 'glucose', 'cholesterol', 'medication',
+    'hospital', 'admission', 'discharge', 'outcome', 'mortality', 'survival'
+  ]
+  
+  return columns.some(col => 
+    medicalKeywords.some(keyword => 
+      col.toLowerCase().includes(keyword)
+    )
   )
 }
 
