@@ -19,15 +19,12 @@ pingouin==0.5.4
 
 # Comprehensive Statistical Libraries - Phase 2B
 scikit-posthocs>=0.7.0      # Post-hoc tests (Dunn's, Games-Howell)
-mord>=0.6                   # Ordinal logistic regression
 factor-analyzer>=0.4.0      # Factor analysis
 prince>=0.7.1              # Correspondence analysis, CA/MCA
 umap-learn>=0.5.0          # UMAP dimensionality reduction
 
 # Specialized Analysis Libraries
-python-dca>=2.0.0          # Decision Curve Analysis
 imbalanced-learn>=0.11.0   # Sampling methods
-bayesian-testing>=0.5.0    # Bayesian statistical tests
 
 # Visualization Libraries - Phase 2B  
 plotly>=5.18.0
@@ -37,10 +34,6 @@ joypy>=0.2.6              # Ridgeline plots
 wordcloud>=1.9.0          # Word clouds
 folium>=0.15.0            # Geographic maps
 networkx>=3.0             # Network graphs
-graphviz>=0.20.1          # Tree diagrams
-
-# Method Comparison & Agreement
-method-comparison>=0.3.0   # Passing-Bablok, Deming regression
 
 # Additional Scientific Libraries
 # scikit-survival==0.22.2  # Commented for compatibility, can be enabled later
