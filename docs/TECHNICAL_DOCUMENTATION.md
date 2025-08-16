@@ -75,6 +75,39 @@ graph TB
 - **xlsx**: Excel file processing for .xlsx and .xls files
 - **JSON.parse**: Native JSON parsing with error handling
 
+### Statistical Computing & Analysis
+- **pandas (2.1.4)**: Data manipulation, descriptive statistics, frequency analysis
+- **numpy (1.24.4)**: Numerical operations, array processing, mathematical functions
+- **scipy (1.11.4)**: Core statistical tests (t-tests, ANOVA, correlation, normality tests)
+- **statsmodels (0.14.1)**: Advanced regression, time series analysis, diagnostic tests
+- **scikit-learn (1.3.2)**: ML models, ROC analysis, cross-validation, classification metrics  
+- **pingouin (0.5.4)**: Medical research statistics, effect sizes, power analysis
+- **lifelines (0.29.0)**: Survival analysis, Kaplan-Meier curves, Cox regression
+
+### Specialized Statistical Libraries
+- **scikit-posthocs (≥0.7.0)**: Post-hoc tests after ANOVA (Tukey HSD, Dunn's test)
+- **factor-analyzer (≥0.4.0)**: Exploratory and confirmatory factor analysis
+- **prince (≥0.7.1)**: Correspondence analysis, PCA, MCA for categorical data
+- **umap-learn (≥0.5.0)**: Non-linear dimensionality reduction and clustering
+- **imbalanced-learn (≥0.11.0)**: Sampling methods for imbalanced datasets
+
+### Visualization & Plotting  
+- **matplotlib (3.8.2)**: Foundation plotting library (histograms, scatter, box plots)
+- **seaborn (0.13.0)**: Statistical visualizations (violin plots, heatmaps, regression)
+- **plotly (≥5.18.0)**: Interactive web charts (3D plots, survival curves, ROC curves)
+- **kaleido (≥0.2.1)**: Static high-resolution exports (PNG, SVG, PDF)
+- **recharts (2.13.3)**: React-based charts for frontend integration
+
+### Optional Visualization Libraries
+- **matplotlib-venn (≥0.11.0)**: Venn diagrams for set relationships
+- **joypy (≥0.2.6)**: Ridgeline plots for distribution comparison  
+- **wordcloud (≥1.9.0)**: Text analysis and word frequency visualization
+- **folium (≥0.15.0)**: Geographic mapping for epidemiological data
+- **networkx (≥3.0)**: Network analysis and graph visualization
+
+### Database & Storage
+- **DuckDB**: High-performance analytical database for large medical datasets
+
 ### AI & External Services
 - **Google Gemini AI**: Natural language processing and data analysis
 - **Custom API Routes**: Server-side integration with external services
