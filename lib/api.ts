@@ -4,7 +4,7 @@
 
 // Determine API base URL based on environment
 const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? (process.env.NEXT_PUBLIC_BACKEND_URL || 'https://nemo-healthdata.preview.emergentagent.com') + '/api'
+  ? (process.env.NEXT_PUBLIC_BACKEND_URL || 'https://statwise-ai-2.preview.emergentagent.com') + '/api'
   : (process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8001')
 
 export interface DatasetInfo {

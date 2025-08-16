@@ -35,7 +35,7 @@ def test_backend_from_frontend():
     """Test if backend is accessible from frontend's perspective"""
     try:
         # Test the backend URL that frontend would use
-        backend_url = "https://nemo-healthdata.preview.emergentagent.com/api/health"
+        backend_url = "https://statwise-ai-2.preview.emergentagent.com/api/health"
         response = requests.get(backend_url, timeout=10)
         
         if response.status_code == 200:
