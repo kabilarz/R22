@@ -399,6 +399,7 @@ Comprehensive documentation is available to help you get the most out of Nemo:
 
 ### 🔧 Developer Resources  
 - **[Technical Documentation](docs/TECHNICAL_DOCUMENTATION.md)** - Architecture, data flow, and APIs
+- **[Library Mapping](LIBRARY_MAPPING.md)** - Complete mapping of 119 statistical tests and 100 visualizations by library
 - **[Ollama Setup Guide](OLLAMA_SETUP.md)** - Local AI integration instructions
 - **[Roadmap](docs/ROADMAP.md)** - Future features and local LLM integration plans
 
