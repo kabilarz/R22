@@ -43,9 +43,22 @@ To democratize data analysis by providing an intuitive, AI-powered platform that
 
 ### Implemented Features ✅
 
+#### Statistical Analysis Engine (119 Tests)
+- **Core Libraries**: pandas, numpy, scipy, statsmodels, scikit-learn, pingouin, lifelines
+- **Specialized Libraries**: scikit-posthocs, factor-analyzer, prince, umap-learn, imbalanced-learn
+- **Test Categories**: Descriptive stats, parametric/non-parametric tests, regression, survival analysis, multivariate methods, Bayesian analysis, power analysis
+- **Medical Focus**: Clinical trials, epidemiological studies, biomarker research
+
+#### Comprehensive Visualization Engine (100 Charts)  
+- **Core Libraries**: matplotlib, seaborn, plotly, kaleido, recharts (React)
+- **Specialized Libraries**: matplotlib-venn, joypy, wordcloud, folium, networkx (optional)
+- **Chart Categories**: Distributions, correlations, time series, survival curves, ROC analysis, geographic mapping, network graphs, meta-analysis plots
+- **Export Formats**: Interactive HTML, static PNG/SVG/PDF for publications
+
 #### Core Data Processing
 - **Multi-format support**: CSV, JSON, Excel (.xlsx, .xls) file upload
 - **Client-side processing**: All data parsing happens in browser for privacy
+- **Database Integration**: DuckDB for high-performance analytical queries
 - **Automatic type detection**: Smart recognition of numeric, text, and date data
 - **Error handling**: Graceful handling of malformed or corrupted files
 
