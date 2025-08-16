@@ -17,6 +17,47 @@
 - [Development Workflow](#development-workflow)
 - [Deployment](#deployment)
 
+## Ollama Local LLM Integration
+
+### Manual Ollama Binary Setup
+For local AI processing capabilities, Ollama must be manually downloaded and placed in the correct location:
+
+#### **Binary Placement Instructions**
+1. **Download Ollama**: Download `ollama.exe` from [https://ollama.ai/download](https://ollama.ai/download)
+2. **Create Directory**: Ensure the following directory exists: `/src-tauri/resources/ollama/`
+3. **Place Binary**: Copy `ollama.exe` to `/src-tauri/resources/ollama/ollama.exe`
+4. **Verify Placement**: The final path should be `/src-tauri/resources/ollama/ollama.exe`
+
+#### **Directory Structure**
+```
+/src-tauri/
+├── resources/
+│   └── ollama/
+│       └── ollama.exe    # <-- Place downloaded binary here
+├── src/
+├── Cargo.toml
+└── tauri.conf.json
+```
+
+#### **System Requirements for Local AI**
+- **Minimum RAM**: 4GB (for TinyLlama model)
+- **Recommended RAM**: 8GB+ (for better performance)
+- **Disk Space**: 2GB free (for model storage)
+- **Operating System**: Windows 10/11 (initial support)
+
+#### **Model Storage Location**
+Downloaded models will be stored in:
+- **Windows**: `%USERPROFILE%\.ollama\models\`
+- **Model Files**: TinyLlama (~1.1GB), future models vary in size
+
+#### **Local vs Cloud Processing**
+- **Local Processing**: Uses Ollama + TinyLlama for privacy-focused analysis
+- **Cloud Processing**: Uses Google Gemini for advanced capabilities
+- **Automatic Fallback**: Graceful switch to cloud when local AI unavailable
+- **User Control**: Toggle between local and cloud modes in the interface
+
+📋 **[Complete Integration Plan](../OLLAMA_INTEGRATION_PLAN.md)** - Detailed implementation roadmap
+
 ---
 
 ## Architecture Overview
