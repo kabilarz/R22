@@ -4,16 +4,15 @@ Simple FastAPI backend for testing basic functionality
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-import os
 
 app = FastAPI(title="Nemo Statistical Analysis API", version="1.0.0")
 
-# Add CORS middleware
+# Simple CORS configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # In production, be more specific
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["*"],
 )
 
@@ -30,6 +29,11 @@ async def health_check():
 async def root():
     """Root endpoint."""
     return {"message": "Nemo AI Statistical Analysis Backend"}
+
+@app.get("/test")
+async def test():
+    """Test endpoint."""
+    return {"test": "success", "backend": "working"}
 
 if __name__ == "__main__":
     import uvicorn
