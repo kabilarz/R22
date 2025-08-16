@@ -1,8 +1,8 @@
 """
 Server entry point for supervisor.
-Imports the FastAPI app from app.py
+Imports the FastAPI app from simple_app.py for testing
 """
-from app import app
+from simple_app import app
 
 if __name__ == "__main__":
     import uvicorn
