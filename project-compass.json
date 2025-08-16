@@ -330,6 +330,7 @@
     "documentation": {
       "user_guide": "docs/USER_GUIDE.md",
       "technical_docs": "docs/TECHNICAL_DOCUMENTATION.md",
+      "library_mapping": "LIBRARY_MAPPING.md",
       "faq": "docs/FAQ.md",
       "roadmap": "docs/ROADMAP.md"
     },
