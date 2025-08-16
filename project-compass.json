@@ -1,7 +1,7 @@
 {
   "name": "Nemo - AI Medical Data Analysis Platform",
   "version": "1.0.0",
-  "description": "Desktop application for medical researchers to analyze datasets using natural language queries and local AI models. Built for privacy and offline operation.",
+  "description": "Desktop application for medical researchers to analyze datasets using natural language queries and local AI models. Features 119 statistical tests and 100 visualization types powered by comprehensive Python scientific libraries. Built for privacy and offline operation.",
   "platform": "Windows",
   "architecture": "x64",
   "requirements": {
