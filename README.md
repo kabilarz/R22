@@ -97,11 +97,13 @@ Nemo now includes **20 advanced medical statistical tests** commonly used in cli
 - **HIPAA-Compatible Privacy** - All data processing can be done completely offline
 
 ### **📊 Comprehensive Analysis Suite**
-- **21 Statistical Tests** - From basic descriptives to advanced survival analysis
-- **Interactive Visualizations** - Medical-specific charts with clinical interpretations  
+- **119 Statistical Tests** - From basic descriptives to advanced survival analysis ✅
+- **100 Visualization Types** - Medical-specific charts with clinical interpretations ✅  
 - **Natural Language Queries** - Ask questions in plain English about your data
 - **Python Code Generation** - AI generates and executes statistical analysis code
 - **Professional Reporting** - Publication-ready results with confidence intervals
+
+📚 **[→ Complete Library & Test Mapping](LIBRARY_MAPPING.md)** - Detailed breakdown of all 119 statistical tests and 100 visualizations by library
 
 ### **🔬 Clinical Research Ready**
 - **Survival Analysis** - Kaplan-Meier curves, Cox regression, log-rank tests
