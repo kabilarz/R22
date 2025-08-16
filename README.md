@@ -52,12 +52,41 @@ Nemo now includes **20 advanced medical statistical tests** commonly used in cli
 - **Survival Curves** - Kaplan-Meier plots with group comparisons
 - **ROC Curves** - Diagnostic test evaluation with AUC scores
 
-### **Advanced Libraries Added** 📚
-- **statsmodels** (0.14.1) - Advanced statistical modeling
-- **lifelines** (0.29.0) - Survival analysis capabilities
-- **scikit-learn** (1.3.2) - Machine learning and diagnostic metrics
-- **pingouin** (0.5.4) - Comprehensive statistical functions
-- **plotly** (5.18.0) - Interactive visualization engine
+### **Statistical & Visualization Library Stack** 📚
+
+#### **Core Statistical Libraries**
+- **pandas** (2.1.4) - Data manipulation foundation (descriptive stats, frequency analysis)
+- **numpy** (1.24.4) - Numerical computing (percentiles, mathematical operations)
+- **scipy** (1.11.4) - Core statistical tests (t-tests, ANOVA, non-parametric tests, normality tests)
+- **statsmodels** (0.14.1) - Advanced regression analysis, time series, diagnostic tests
+- **scikit-learn** (1.3.2) - ML models, ROC analysis, cross-validation, classification metrics
+- **pingouin** (0.5.4) - Medical research functions (effect sizes, power analysis, Bayesian tests)
+- **lifelines** (0.29.0) - Survival analysis (Kaplan-Meier, Cox regression, log-rank tests)
+
+#### **Specialized Statistical Libraries**
+- **scikit-posthocs** (≥0.7.0) - Post-hoc tests (Tukey HSD, Dunn's test, Games-Howell)
+- **factor-analyzer** (≥0.4.0) - Factor analysis and dimensionality reduction
+- **prince** (≥0.7.1) - Correspondence analysis, PCA, MCA for categorical data
+- **umap-learn** (≥0.5.0) - Non-linear dimensionality reduction and clustering
+- **imbalanced-learn** (≥0.11.0) - Sampling techniques for unbalanced datasets
+
+#### **Visualization Libraries**
+- **matplotlib** (3.8.2) - Foundation plotting (histograms, scatter, line plots, statistical annotations)
+- **seaborn** (0.13.0) - Statistical visualization (violin plots, heatmaps, regression plots)
+- **plotly** (≥5.18.0) - Interactive charts (3D plots, survival curves, ROC curves with zoom/hover)
+- **kaleido** (≥0.2.1) - High-resolution static exports (PNG, SVG, PDF for publications)
+
+#### **Specialized Visualization Libraries** *(Optional)*
+- **matplotlib-venn** (≥0.11.0) - Venn diagrams for treatment overlap analysis
+- **joypy** (≥0.2.6) - Ridgeline plots for distribution comparison
+- **wordcloud** (≥1.9.0) - Text analysis visualization for symptom frequency
+- **folium** (≥0.15.0) - Geographic mapping for epidemiological studies
+- **networkx** (≥3.0) - Network graphs for patient referral pathways
+
+#### **Frontend Integration**
+- **recharts** (2.13.3) - React-based interactive charts for real-time dashboard updates
+
+📖 **[Complete Library Mapping](LIBRARY_MAPPING.md)** - Detailed breakdown of 119 statistical tests and 100 visualizations by library
 
 ## 🔥 **Key Features**
 
