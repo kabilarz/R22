@@ -4,8 +4,8 @@ A comprehensive, AI-powered desktop application designed specifically for medica
 
 ## 🚀 **Phase 2A Complete - Enhanced Medical Statistics**
 
-### **New Statistical Capabilities** 
-Nemo now includes **20 advanced medical statistical tests** commonly used in clinical research and epidemiology:
+### **Comprehensive Statistical Capabilities** 
+Nemo now includes **119 statistical tests** specifically designed for medical research, clinical trials, and epidemiological studies:
 
 #### **Core Statistical Tests** ✅
 1. **Descriptive Statistics** - Comprehensive summary statistics with medical interpretations
@@ -37,11 +37,126 @@ Nemo now includes **20 advanced medical statistical tests** commonly used in cli
 19. **Sensitivity & Specificity analysis** - Comprehensive diagnostic metrics
 20. **Odds ratio & Relative risk analysis** - Case-control and cohort study analysis
 
-#### **Additional Tests** ✅
+#### **Additional Core Tests** ✅
 21. **McNemar's test** - Paired nominal data analysis
 22. **Spearman rank correlation** - Non-parametric correlation
 23. **Shapiro-Wilk test** - Test for normality
 24. **Levene's test** - Test equality of variances
+25. **Pearson correlation** - Linear correlation analysis between continuous variables
+
+### **Extended Statistical Test Suite (119 Tests Total)**
+
+#### **Normality & Distribution Tests (8 tests)**
+26. **Kolmogorov-Smirnov test** - Test normality with known distribution
+27. **Anderson-Darling test** - More sensitive normality test
+28. **D'Agostino-Pearson test** - Omnibus normality test
+29. **Jarque-Bera test** - Normality test based on skewness and kurtosis
+30. **Chi-square goodness-of-fit** - Test distribution fit
+31. **Cramér-von Mises test** - Distribution comparison
+32. **Two-sample Kolmogorov-Smirnov** - Compare two distributions
+
+#### **Extended Parametric Tests (12 tests)**
+33. **Welch's t-test** - Unequal variances t-test
+34. **Repeated measures ANOVA** - Within-subjects analysis
+35. **Mixed ANOVA** - Between and within-subjects factors
+36. **ANCOVA** - Analysis of covariance
+37. **MANOVA** - Multivariate analysis of variance
+38. **Factorial ANOVA** - Multi-factor analysis
+39. **Nested ANOVA** - Hierarchical factor structure
+40. **Hotelling's T²** - Multivariate t-test
+41. **Pillai's trace** - MANOVA test statistic
+42. **Wilks' lambda** - MANOVA test statistic
+43. **Roy's largest root** - MANOVA test statistic
+44. **Greenhouse-Geisser correction** - Sphericity correction
+
+#### **Extended Non-Parametric Tests (13 tests)**
+45. **Sign test** - Simple paired comparison
+46. **Median test** - Compare medians across groups
+47. **Mood's test** - Compare scale parameters
+48. **Ansari-Bradley test** - Compare dispersions
+49. **Bartlett test** - Test equal variances
+50. **Fligner-Killeen test** - Robust variance test
+51. **Brown-Forsythe test** - Modified Levene's test
+52. **Page test** - Ordered alternatives
+53. **Quade test** - Non-parametric ANCOVA
+54. **Cochran's Q test** - Repeated measures with binary data
+55. **Bowker's test** - Symmetry in contingency tables
+56. **McNemar-Bowker test** - Extended McNemar's test
+57. **Exact tests** - Small sample non-parametric tests
+
+#### **Post-Hoc & Multiple Comparisons (8 tests)**
+58. **Tukey HSD** - Honest significant difference
+59. **Bonferroni correction** - Multiple comparison adjustment
+60. **Holm-Bonferroni** - Sequential Bonferroni method
+61. **Dunn's test** - Non-parametric post-hoc
+62. **Games-Howell** - Unequal variances post-hoc
+63. **Scheffé test** - Conservative multiple comparisons
+64. **Newman-Keuls** - Student-Newman-Keuls method
+65. **Duncan's test** - Multiple range test
+
+#### **Extended Correlation & Association (9 tests)**
+66. **Kendall's tau** - Rank correlation coefficient
+67. **Point-biserial correlation** - Continuous-binary correlation
+68. **Phi coefficient** - Binary-binary association
+69. **Cramér's V** - Categorical association strength
+70. **Concordance correlation** - Agreement measure
+71. **Partial correlation** - Controlling for variables
+72. **Semi-partial correlation** - Unique contribution
+73. **Intraclass correlation** - Reliability measure
+74. **Canonical correlation** - Multivariate association
+
+#### **Advanced Regression Analysis (15 tests)**
+75. **Simple linear regression** - Single predictor model
+76. **Multiple linear regression** - Multiple predictors
+77. **Polynomial regression** - Non-linear relationships
+78. **Stepwise regression** - Variable selection
+79. **Ridge regression** - L2 regularization
+80. **Lasso regression** - L1 regularization
+81. **Elastic Net regression** - Combined regularization
+82. **Multinomial logistic regression** - Multiple categories
+83. **Ordinal logistic regression** - Ordered categories
+84. **Poisson regression** - Count data modeling
+85. **Negative binomial regression** - Overdispersed counts
+86. **Robust regression** - Outlier-resistant methods
+87. **Quantile regression** - Conditional quantiles
+88. **Non-linear regression** - Custom functional forms
+89. **Hierarchical linear modeling** - Nested data structures
+
+#### **Categorical Data Analysis (9 tests)**
+90. **Chi-square independence** - Test variable independence
+91. **Fisher's exact test** - Small sample categorical test
+92. **G-test** - Log-likelihood ratio test
+93. **Log-linear analysis** - Multidimensional contingency tables
+94. **Exact multinomial test** - Goodness-of-fit for categories
+95. **Mantel-Haenszel test** - Stratified analysis
+96. **Breslow-Day test** - Homogeneity of odds ratios
+97. **Cochran-Armitage trend test** - Trend in proportions
+98. **Stuart-Maxwell test** - Marginal homogeneity
+
+#### **Time Series Analysis (8 tests)**
+99. **Augmented Dickey-Fuller** - Unit root test
+100. **KPSS test** - Stationarity test
+101. **Phillips-Perron test** - Unit root with corrections
+102. **ARIMA modeling** - Autoregressive integrated moving average
+103. **Seasonal decomposition** - Trend and seasonal components
+104. **Ljung-Box test** - Autocorrelation test
+105. **Durbin-Watson test** - Serial correlation in residuals
+106. **Granger causality** - Temporal causation test
+
+#### **Diagnostic & Model Validation (13 tests)**
+107. **Cross-validation** - Model generalization assessment
+108. **Bootstrap resampling** - Non-parametric confidence intervals
+109. **Jackknife estimation** - Leave-one-out validation
+110. **Permutation tests** - Distribution-free hypothesis testing
+111. **Goodness-of-fit tests** - Model adequacy assessment
+112. **Residual analysis** - Model assumption checking
+113. **Leverage analysis** - Influential observation detection
+114. **Cook's distance** - Outlier influence measure
+115. **DFBETAS** - Parameter influence diagnostics
+116. **Influence measures** - Comprehensive diagnostic suite
+117. **Model selection criteria** - AIC, BIC, cross-validation scores
+118. **Calibration assessment** - Prediction accuracy evaluation
+119. **Discrimination measures** - Model performance metrics
 
 ### **Enhanced Medical Visualizations** 🎨
 - **Medical Overview Dashboard** - Patient demographics and vital signs summary
