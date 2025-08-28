@@ -8,8 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   PieChart, Pie, Cell, LineChart, Line, ScatterChart, Scatter,
-  AreaChart, Area, ComposedChart, ReferenceLine, ReferenceArea,
-  BoxPlot
+  AreaChart, Area, ComposedChart, ReferenceLine, ReferenceArea
 } from 'recharts'
 import { 
   TrendingUp, BarChart3, PieChart as PieChartIcon, Activity, 
@@ -280,7 +279,7 @@ function VitalSignsCharts({ data, numericColumns, medicalColumns }: { data: any[
                       className="w-3 h-3 rounded-full" 
                       style={{ backgroundColor: (SEVERITY_COLORS as any)[status] || '#6B7280' }}
                     />
-                    <span className="text-sm">{status}: {count}</span>
+                    <span className="text-sm">{status}: {String(count)}</span>
                   </div>
                 ))}
               </div>

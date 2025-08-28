@@ -1,9 +1,11 @@
 /**
  * AI Service that handles both local (Ollama) and cloud (Gemini) models
+ * Now includes memory optimization and intelligent model selection
  */
 
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { ollamaClient } from './ollama-client'
+import { memoryOptimizer } from './memory-optimizer'
 
 export type ModelType = 'local' | 'cloud'
 
@@ -31,15 +33,23 @@ export class AIService {
   }
 
   /**
-   * Generate analysis using the selected model
+   * Generate analysis using the selected model with memory optimization
    */
   async generateAnalysisCode(modelName: string, query: string, dataContext: string): Promise<string> {
     const modelType = this.getModelType(modelName)
     
+    // Optimize prompt based on memory constraints
+    const optimizedDataContext = await memoryOptimizer.optimizePrompt(dataContext, modelName)
+    
+    // Preload model if memory allows
     if (modelType === 'local') {
-      return this.generateWithLocalModel(modelName, query, dataContext)
+      await memoryOptimizer.preloadModel(modelName)
+    }
+    
+    if (modelType === 'local') {
+      return this.generateWithLocalModel(modelName, query, optimizedDataContext)
     } else {
-      return this.generateWithGemini(query, dataContext)
+      return this.generateWithGemini(query, optimizedDataContext)
     }
   }
 
@@ -109,7 +119,7 @@ Python Code:`
   }
 
   /**
-   * Chat with the AI model using conversation history
+   * Chat with the AI model using conversation history with memory optimization
    */
   async chat(modelName: string, messages: AIMessage[], dataContext?: string): Promise<string> {
     const modelType = this.getModelType(modelName)
@@ -123,8 +133,16 @@ Python Code:`
       ? `${dataContext}\n\nConversation:\n${conversationText}\n\nASSISTANT:`
       : `${conversationText}\n\nASSISTANT:`
     
+    // Optimize prompt for memory efficiency
+    const optimizedPrompt = await memoryOptimizer.optimizePrompt(contextualPrompt, modelName)
+    
+    // Preload model if local and memory allows
     if (modelType === 'local') {
-      return await ollamaClient.query(modelName, contextualPrompt)
+      await memoryOptimizer.preloadModel(modelName)
+    }
+    
+    if (modelType === 'local') {
+      return await ollamaClient.query(modelName, optimizedPrompt)
     } else {
       return this.generateWithGemini(conversationText, dataContext || '')
     }
@@ -150,20 +168,28 @@ Python Code:`
   }
 
   /**
-   * Get available models
+   * Get available models with memory optimization recommendations
    */
-  async getAvailableModels(): Promise<Array<{id: string, name: string, type: ModelType, available: boolean}>> {
+  async getAvailableModels(): Promise<Array<{id: string, name: string, type: ModelType, available: boolean, recommended?: boolean, memoryOptimal?: boolean}>> {
     const models = []
+    
+    // Get memory profile for optimization
+    const memoryProfile = await memoryOptimizer.getMemoryProfile()
     
     // Add local models
     try {
       const installedModels = await ollamaClient.listInstalledModels()
       for (const model of installedModels) {
+        const isRecommended = model === memoryProfile.recommendedModel
+        const isMemoryOptimal = await this.isModelMemoryOptimal(model)
+        
         models.push({
           id: model,
           name: model,
           type: 'local' as ModelType,
-          available: true
+          available: true,
+          recommended: isRecommended,
+          memoryOptimal: isMemoryOptimal
         })
       }
     } catch (error) {
@@ -171,14 +197,80 @@ Python Code:`
     }
     
     // Add cloud models
+    const isGeminiOptimal = memoryProfile.recommendedModel === 'gemini-1.5-flash'
     models.push({
       id: 'gemini-1.5-flash',
       name: 'Google Gemini (Cloud)',
       type: 'cloud' as ModelType,
-      available: !!this.geminiClient
+      available: !!this.geminiClient,
+      recommended: isGeminiOptimal,
+      memoryOptimal: true // Cloud models don't use local memory
     })
     
     return models
+  }
+
+  /**
+   * Check if a model is memory optimal for current system
+   */
+  private async isModelMemoryOptimal(modelName: string): Promise<boolean> {
+    try {
+      const memoryProfile = await memoryOptimizer.getMemoryProfile()
+      return memoryProfile.recommendedModel === modelName
+    } catch {
+      return false
+    }
+  }
+
+  /**
+   * Get intelligent model recommendation based on query complexity
+   */
+  async getModelRecommendation(query: string, complexity?: 'low' | 'medium' | 'high'): Promise<{
+    modelName: string
+    reasoning: string
+    fallback?: string
+    memoryEfficient: boolean
+  }> {
+    // Determine complexity if not provided
+    if (!complexity) {
+      complexity = this.determineQueryComplexity(query)
+    }
+    
+    const recommendation = await memoryOptimizer.getOptimalModelForQuery(query.length, complexity)
+    
+    return {
+      modelName: recommendation.modelName,
+      reasoning: recommendation.reasoning,
+      fallback: recommendation.fallback,
+      memoryEfficient: recommendation.modelName !== 'biomistral:7b' // 7B models use more memory
+    }
+  }
+
+  /**
+   * Determine query complexity based on content
+   */
+  private determineQueryComplexity(query: string): 'low' | 'medium' | 'high' {
+    const lowerQuery = query.toLowerCase()
+    
+    // High complexity indicators
+    if (lowerQuery.includes('machine learning') ||
+        lowerQuery.includes('deep analysis') ||
+        lowerQuery.includes('regression') ||
+        lowerQuery.includes('correlation matrix') ||
+        lowerQuery.includes('statistical modeling')) {
+      return 'high'
+    }
+    
+    // Medium complexity indicators
+    if (lowerQuery.includes('analysis') ||
+        lowerQuery.includes('compare') ||
+        lowerQuery.includes('visualization') ||
+        lowerQuery.includes('statistics')) {
+      return 'medium'
+    }
+    
+    // Default to low complexity
+    return 'low'
   }
 }
 

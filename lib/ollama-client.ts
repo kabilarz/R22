@@ -1,9 +1,25 @@
 /**
  * Ollama client for local LLM integration
  * Interfaces with Tauri commands for Ollama management
+ * Includes fallback for browser/development mode
  */
 
-import { invoke } from '@tauri-apps/api/core'
+// Tauri environment detection
+let invoke: any = null
+let isTauriEnvironment = false
+
+if (typeof window !== 'undefined') {
+  try {
+    // Try to import Tauri API
+    const tauriApi = require('@tauri-apps/api/core')
+    invoke = tauriApi.invoke
+    isTauriEnvironment = true
+    console.log('🖥️ Tauri environment detected - Local AI available')
+  } catch (error) {
+    console.log('🌐 Browser environment detected - Cloud AI only')
+    isTauriEnvironment = false
+  }
+}
 
 export interface HardwareInfo {
   total_memory_gb: number
@@ -25,9 +41,29 @@ export interface ModelInfo {
 
 export class OllamaClient {
   /**
+   * Check if running in Tauri environment
+   */
+  isTauriAvailable(): boolean {
+    return isTauriEnvironment && invoke !== null
+  }
+
+  /**
    * Get system hardware information
    */
   async getHardwareInfo(): Promise<HardwareInfo> {
+    if (!this.isTauriAvailable()) {
+      // Return mock hardware info for browser mode
+      return {
+        total_memory_gb: 8.0,
+        available_memory_gb: 6.0,
+        cpu_count: 4,
+        recommended_model: 'gemini-1.5-flash',
+        can_run_7b: false,
+        can_run_mini: false,
+        os: 'Browser'
+      }
+    }
+
     try {
       return await invoke<HardwareInfo>('get_hardware_info')
     } catch (error) {
@@ -39,6 +75,11 @@ export class OllamaClient {
    * Check if Ollama service is running
    */
   async checkStatus(): Promise<boolean> {
+    if (!this.isTauriAvailable()) {
+      console.log('Ollama status check: Browser mode - local AI not available')
+      return false
+    }
+
     try {
       return await invoke<boolean>('check_ollama_status')
     } catch (error) {
@@ -51,6 +92,10 @@ export class OllamaClient {
    * Setup bundled Ollama
    */
   async setupBundledOllama(): Promise<string> {
+    if (!this.isTauriAvailable()) {
+      return 'Browser mode: Ollama not available - using cloud AI fallback'
+    }
+
     try {
       return await invoke<string>('setup_bundled_ollama')
     } catch (error) {
@@ -62,6 +107,10 @@ export class OllamaClient {
    * Start Ollama service
    */
   async startOllama(): Promise<string> {
+    if (!this.isTauriAvailable()) {
+      throw new Error('Cannot start Ollama in browser mode. Please use the desktop application for local AI features.')
+    }
+
     try {
       return await invoke<string>('start_ollama')
     } catch (error) {
@@ -73,6 +122,10 @@ export class OllamaClient {
    * Download a model
    */
   async downloadModel(modelName: string): Promise<string> {
+    if (!this.isTauriAvailable()) {
+      throw new Error('Model download not available in browser mode. Please use the desktop application.')
+    }
+
     try {
       return await invoke<string>('download_model', { modelName })
     } catch (error) {
@@ -84,6 +137,10 @@ export class OllamaClient {
    * Query a local LLM
    */
   async query(model: string, prompt: string): Promise<string> {
+    if (!this.isTauriAvailable()) {
+      throw new Error('Local model queries not available in browser mode. Please use cloud models or the desktop application.')
+    }
+
     try {
       return await invoke<string>('query_ollama', { model, prompt })
     } catch (error) {
@@ -95,6 +152,11 @@ export class OllamaClient {
    * Get list of installed models
    */
   async listInstalledModels(): Promise<string[]> {
+    if (!this.isTauriAvailable()) {
+      console.log('Local models not available in browser mode')
+      return []
+    }
+
     try {
       return await invoke<string[]>('list_installed_models')
     } catch (error) {
@@ -107,6 +169,26 @@ export class OllamaClient {
    * Get model recommendations based on hardware
    */
   async getModelRecommendations(): Promise<ModelInfo[]> {
+    if (!this.isTauriAvailable()) {
+      // Return basic cloud model recommendations for browser mode
+      return [
+        {
+          name: 'gemini-1.5-flash',
+          size_gb: 0, // Cloud model
+          description: 'Fast cloud AI model for quick analysis',
+          recommended_ram_gb: 0,
+          is_medical: false
+        },
+        {
+          name: 'gemini-1.5-pro',
+          size_gb: 0, // Cloud model
+          description: 'Advanced cloud AI model for complex analysis',
+          recommended_ram_gb: 0,
+          is_medical: false
+        }
+      ]
+    }
+
     try {
       return await invoke<ModelInfo[]>('get_model_recommendations')
     } catch (error) {

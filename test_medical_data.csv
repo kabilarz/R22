@@ -1,0 +1,11 @@
+patient_id,age,gender,systolic_bp,diastolic_bp,cholesterol,diagnosis
+1,45,M,140,90,220,hypertension
+2,34,F,120,80,180,normal
+3,67,M,160,95,280,hypertension
+4,28,F,110,70,160,normal
+5,52,M,150,85,240,hypertension
+6,41,F,130,82,200,borderline
+7,59,M,145,88,250,hypertension
+8,33,F,115,75,170,normal
+9,46,M,155,92,260,hypertension
+10,39,F,125,78,190,normal

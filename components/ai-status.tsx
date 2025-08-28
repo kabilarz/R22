@@ -41,6 +41,27 @@ export function AIStatus({ selectedModel, onModelChange, className }: AIStatusPr
   const checkSystemStatus = async () => {
     setIsLoading(true)
     try {
+      // Check if we're in a Tauri environment
+      if (!ollamaClient.isTauriAvailable()) {
+        console.log('🌐 Running in browser mode - local AI features disabled')
+        
+        // Set browser-appropriate defaults
+        const browserHardware: HardwareInfo = {
+          total_memory_gb: 8.0,
+          available_memory_gb: 6.0,
+          cpu_count: 4,
+          recommended_model: 'gemini-1.5-flash',
+          can_run_7b: false,
+          can_run_mini: false,
+          os: 'Browser'
+        }
+        
+        setHardware(browserHardware)
+        setIsOllamaRunning(false)
+        setInstalledModels([])
+        return
+      }
+
       // Setup bundled Ollama if available
       try {
         await ollamaClient.setupBundledOllama()
@@ -63,12 +84,29 @@ export function AIStatus({ selectedModel, onModelChange, className }: AIStatusPr
 
     } catch (error) {
       console.error('Failed to check system status:', error)
+      // Set fallback values in case of error
+      setHardware({
+        total_memory_gb: 4.0,
+        available_memory_gb: 2.0,
+        cpu_count: 2,
+        recommended_model: 'gemini-1.5-flash',
+        can_run_7b: false,
+        can_run_mini: false,
+        os: 'Unknown'
+      })
+      setIsOllamaRunning(false)
     } finally {
       setIsLoading(false)
     }
   }
 
   const handleStartOllama = async () => {
+    // Check if we're in a Tauri environment
+    if (!ollamaClient.isTauriAvailable()) {
+      toast.error('Ollama startup is only available in desktop mode. Please use npm run tauri dev or the built desktop application.')
+      return
+    }
+
     setIsStartingOllama(true)
     try {
       toast.info('Starting Ollama service...')

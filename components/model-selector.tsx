@@ -68,6 +68,41 @@ export function ModelSelector({ selectedModel, onModelChange, onModelReady }: Mo
     try {
       setIsInitializing(true)
       
+      // Check if we're in a Tauri environment
+      if (!ollamaClient.isTauriAvailable()) {
+        console.log('🌐 Browser mode: Local AI not available, using cloud models only')
+        
+        // Set browser-appropriate defaults
+        const browserHardware: HardwareInfo = {
+          total_memory_gb: 8.0,
+          available_memory_gb: 6.0,
+          cpu_count: 4,
+          recommended_model: 'gemini-1.5-flash',
+          can_run_7b: false,
+          can_run_mini: false,
+          os: 'Browser'
+        }
+        
+        setHardware(browserHardware)
+        
+        // Get cloud model recommendations
+        const cloudRecommendations = await ollamaClient.getModelRecommendations()
+        setModelRecommendations(cloudRecommendations)
+        
+        // Set cloud model as default
+        if (!selectedModel) {
+          onModelChange('gemini-1.5-flash')
+        }
+        
+        setIsOllamaRunning(false)
+        setInstalledModels([])
+        onModelReady(true) // Cloud models are available
+        return
+      }
+      
+      // Tauri environment - proceed with full Ollama setup
+      console.log('🖥️ Desktop mode: Setting up local AI integration')
+      
       // Setup bundled Ollama first
       try {
         await ollamaClient.setupBundledOllama()

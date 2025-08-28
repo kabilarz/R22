@@ -17,7 +17,7 @@ import {
   TrendingUp, 
   PieChart,
   LineChart,
-  Scatter,
+  ScatterChart,
   Map,
   Activity,
   Heart,
@@ -87,7 +87,7 @@ const VISUALIZATION_CATEGORIES = {
     ]
   },
   "Correlation & Relationships": {
-    icon: <Scatter className="h-4 w-4" />,
+    icon: <ScatterChart className="h-4 w-4" />,
     color: "bg-orange-50 border-orange-200",
     visualizations: [
       { id: "scatter-plot", name: "Scatter Plot", description: "Bivariate relationships", icon: "⚫" },
@@ -440,7 +440,7 @@ export function ComprehensiveVisualizationsPanel({ selectedFile, onGenerateVisua
       }
     }
     return acc
-  }, {} as any)
+  }, {} as typeof VISUALIZATION_CATEGORIES)
 
   return (
     <div className="space-y-6">

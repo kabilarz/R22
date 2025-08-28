@@ -43,53 +43,12 @@
     "category": "Productivity",
     "shortDescription": "AI-powered medical data analysis platform",
     "longDescription": "Nemo is a desktop application for medical researchers and healthcare professionals to analyze datasets using natural language queries and local AI models. Built for privacy, security, and offline operation with comprehensive data analysis capabilities.",
-    "resources": [
-      "resources/ollama/*",
-      "resources/python/*",
-      "resources/models/*"
-    ],
-    "externalBin": [
-      "resources/ollama/ollama"
-    ],
+
     "copyright": "Copyright © 2025 Nemo Analytics. All rights reserved.",
     "licenseFile": "LICENSE",
     "windows": {
-      "certificateThumbprint": null,
-      "digestAlgorithm": "sha256",
-      "timestampUrl": "",
-      "tsp": false,
-      "wix": {
-        "language": "en-US",
-        "template": "main.wxs",
-        "fragmentPaths": [],
-        "componentRefs": [],
-        "componentGroupRefs": [],
-        "featureRefs": [],
-        "featureGroupRefs": [],
-        "mergeRefs": [],
-        "skipWebviewInstall": false,
-        "licenseText": null,
-        "enableElevatedUpdateTask": true,
-        "bannerPath": null,
-        "dialogImagePath": null
-      },
       "nsis": {
-        "template": null,
-        "headerImage": null,
-        "sidebarImage": null,
-        "installerIcon": null,
-        "installMode": "currentUser",
-        "languages": ["English"],
-        "displayLanguageSelector": false,
-        "compressionLevel": "high",
-        "oneClick": false,
-        "allowToChangeInstallationDirectory": true,
-        "perMachine": false,
-        "deleteAppDataOnUninstall": true,
-        "shortcutOnly": false,
-        "createDesktopShortcut": true,
-        "createStartMenuShortcut": true,
-        "license": "LICENSE"
+        "installMode": "currentUser"
       }
     }
   },

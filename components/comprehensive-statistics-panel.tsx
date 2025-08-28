@@ -226,7 +226,7 @@ export function ComprehensiveStatisticsPanel({ selectedFile, onRunAnalysis }: Co
     if (!selectedTest) return null
 
     // Find the test definition
-    let testDef = null
+    let testDef: { id: string; name: string; description: string; } | undefined = undefined
     for (const category of Object.values(STATISTICAL_CATEGORIES)) {
       testDef = category.tests.find(t => t.id === selectedTest)
       if (testDef) break

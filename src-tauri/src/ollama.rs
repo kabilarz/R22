@@ -1,10 +1,9 @@
 use reqwest;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use std::env;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
-use sysinfo::{System, SystemExt};
+use sysinfo::System;
 use tauri::command;
 use tauri::{AppHandle, Manager};
 use tokio::time::{timeout, Duration};
