@@ -15,6 +15,6 @@ python -m pip install fastapi uvicorn --quiet
 
 echo Starting backend server on http://localhost:8001...
 echo Press Ctrl+C to stop the server
-python simple_app.py
+python app.py
 
 pause

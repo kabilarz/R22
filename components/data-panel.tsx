@@ -162,6 +162,7 @@ export function DataPanel({
     // Check if we're running in Tauri
     if (tauriApis.open) {
       try {
+        console.log('Opening native file dialog...')
         const selected = await tauriApis.open({
           filters: [
             {
@@ -174,14 +175,34 @@ export function DataPanel({
         
         if (selected) {
           const filePaths = Array.isArray(selected) ? selected : [selected]
+          console.log('Files selected:', filePaths)
           await processFilePaths(filePaths)
+        } else {
+          console.log('File selection cancelled')
         }
       } catch (error) {
-        toast.error('Failed to open file dialog')
         console.error('File dialog error:', error)
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+        
+        // Enhanced error handling with specific suggestions
+        if (errorMessage.includes('permission') || errorMessage.includes('access')) {
+          toast.error('File access denied. Please check file permissions and try again.')
+        } else if (errorMessage.includes('not found') || errorMessage.includes('missing')) {
+          toast.error('File dialog component not found. Using browser file picker as fallback.')
+          // Fallback to browser file input
+          fileInputRef.current?.click()
+        } else {
+          toast.error(`Failed to open file dialog: ${errorMessage}. Try restarting the application or use drag & drop.`)
+        }
+        
+        // Additional fallback: suggest alternative methods
+        setTimeout(() => {
+          toast.info('Tip: You can also drag and drop files directly onto the upload area!')
+        }, 2000)
       }
     } else {
-      // Fallback to browser file input for development
+      // Browser mode or Tauri APIs not available - use browser file input
+      console.log('Using browser file input (desktop mode not available)')
       fileInputRef.current?.click()
     }
   }

@@ -18,11 +18,36 @@ export class AIService {
   private geminiClient?: GoogleGenerativeAI
   
   constructor() {
-    // Initialize Gemini if API key is available
-    const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || process.env.GEMINI_API_KEY
+    this.initializeGeminiClient()
+  }
+
+  /**
+   * Initialize or refresh Gemini client with current API key
+   */
+  private initializeGeminiClient() {
+    // Check for API key in localStorage first, then environment
+    let apiKey: string | undefined
+    
+    if (typeof window !== 'undefined') {
+      apiKey = localStorage.getItem('gemini_api_key') || undefined
+    }
+    
+    if (!apiKey) {
+      apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || process.env.GEMINI_API_KEY
+    }
+    
     if (apiKey) {
       this.geminiClient = new GoogleGenerativeAI(apiKey)
+    } else {
+      this.geminiClient = undefined
     }
+  }
+
+  /**
+   * Refresh API client with new key (called when key is updated)
+   */
+  public refreshApiClient() {
+    this.initializeGeminiClient()
   }
 
   /**

@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "identifier": "com.nemo.medicalanalytics",
   "build": {
-    "frontendDist": "out",
+    "frontendDist": "../out",
     "devUrl": "http://localhost:3000",
     "beforeDevCommand": "npm run dev",
     "beforeBuildCommand": "npm run build"
@@ -43,41 +43,16 @@
     "category": "Productivity",
     "shortDescription": "AI-powered medical data analysis platform",
     "longDescription": "Nemo is a desktop application for medical researchers and healthcare professionals to analyze datasets using natural language queries and local AI models. Built for privacy, security, and offline operation with comprehensive data analysis capabilities.",
-
     "copyright": "Copyright © 2025 Nemo Analytics. All rights reserved.",
     "licenseFile": "LICENSE",
+    "resources": [
+      "../backend"
+    ],
     "windows": {
       "nsis": {
         "installMode": "currentUser"
       }
     }
   },
-  "plugins": {
-    "dialog": {
-      "all": true,
-      "ask": true,
-      "confirm": true,
-      "message": true,
-      "open": true,
-      "save": true
-    },
-    "fs": {
-      "all": true,
-      "readFile": true,
-      "writeFile": true,
-      "readDir": true,
-      "copyFile": true,
-      "createDir": true,
-      "removeDir": true,
-      "removeFile": true,
-      "renameFile": true,
-      "exists": true
-    },
-    "shell": {
-      "all": false,
-      "execute": true,
-      "sidecar": true,
-      "open": false
-    }
-  }
+  "plugins": {}
 }

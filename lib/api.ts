@@ -2,10 +2,50 @@
  * API client for the statistical analysis backend
  */
 
-// Determine API base URL based on environment
-const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? (process.env.NEXT_PUBLIC_BACKEND_URL || 'https://statwise-ai-2.preview.emergentagent.com') + '/api'
-  : (process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8001')
+/**
+ * Production-ready API client for the statistical analysis backend
+ * Optimized for both development and production desktop builds
+ */
+
+// Environment detection for desktop applications
+const isDesktopBuild = typeof window !== 'undefined' && (
+  // Tauri environment detection
+  (window as any).__TAURI__ !== undefined ||
+  // Static export detection (file protocol)
+  window.location.protocol === 'file:' ||
+  // Desktop protocols
+  ['tauri:', 'app:', 'file:'].includes(window.location.protocol) ||
+  // Fallback: non-web protocols
+  !['http:', 'https:'].includes(window.location.protocol)
+)
+
+// Determine API base URL with production-ready logic
+const API_BASE_URL = (() => {
+  // For desktop builds, always use localhost
+  if (isDesktopBuild) {
+    return 'http://localhost:8001/api'
+  }
+  
+  // For web builds, use environment-based URLs
+  if (process.env.NODE_ENV === 'production') {
+    return (process.env.NEXT_PUBLIC_BACKEND_URL || 'https://statwise-ai-2.preview.emergentagent.com') + '/api'
+  }
+  
+  // Development fallback
+  return process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8001/api'
+})()
+
+// Enhanced debug logging for production
+if (typeof window !== 'undefined') {
+  console.log('🔧 Nemo API Client Initialized:', {
+    isDesktopBuild,
+    apiBaseUrl: API_BASE_URL,
+    protocol: window.location.protocol,
+    hostname: window.location.hostname,
+    userAgent: navigator.userAgent.includes('Tauri') ? 'Tauri Desktop' : 'Web Browser',
+    environment: process.env.NODE_ENV
+  })
+}
 
 export interface DatasetInfo {
   dataset_id: string
@@ -212,9 +252,37 @@ export class APIClient {
   }
 
   async healthCheck(): Promise<{ status: string; message: string }> {
-    const response = await fetch(`${this.baseUrl}/health`)
-    if (!response.ok) throw new Error(`Health check failed: ${response.statusText}`)
-    return await response.json()
+    console.log('Health check attempt:', {
+      url: `${this.baseUrl}/health`,
+      baseUrl: this.baseUrl,
+      timestamp: new Date().toISOString()
+    })
+    
+    try {
+      const response = await fetch(`${this.baseUrl}/health`)
+      
+      console.log('Health check response:', {
+        status: response.status,
+        ok: response.ok,
+        statusText: response.statusText,
+        url: response.url
+      })
+      
+      if (!response.ok) {
+        throw new Error(`Health check failed: ${response.status} ${response.statusText}`)
+      }
+      
+      const data = await response.json()
+      console.log('Health check success:', data)
+      return data
+    } catch (error) {
+      console.error('Health check error:', {
+        error: error.message,
+        baseUrl: this.baseUrl,
+        type: error.constructor.name
+      })
+      throw error
+    }
   }
 
   async executePythonCode(code: string, fileName: string, fileData: any[]): Promise<{

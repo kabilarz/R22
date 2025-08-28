@@ -65,7 +65,7 @@ export class OllamaClient {
     }
 
     try {
-      return await invoke<HardwareInfo>('get_hardware_info')
+      return await invoke('get_hardware_info')
     } catch (error) {
       throw new Error(`Failed to get hardware info: ${error}`)
     }
@@ -81,7 +81,7 @@ export class OllamaClient {
     }
 
     try {
-      return await invoke<boolean>('check_ollama_status')
+      return await invoke('check_ollama_status')
     } catch (error) {
       console.error('Failed to check Ollama status:', error)
       return false
@@ -97,7 +97,7 @@ export class OllamaClient {
     }
 
     try {
-      return await invoke<string>('setup_bundled_ollama')
+      return await invoke('setup_bundled_ollama')
     } catch (error) {
       throw new Error(`Failed to setup bundled Ollama: ${error}`)
     }
@@ -112,7 +112,7 @@ export class OllamaClient {
     }
 
     try {
-      return await invoke<string>('start_ollama')
+      return await invoke('start_ollama')
     } catch (error) {
       throw new Error(`Failed to start Ollama: ${error}`)
     }
@@ -127,7 +127,7 @@ export class OllamaClient {
     }
 
     try {
-      return await invoke<string>('download_model', { modelName })
+      return await invoke('download_model', { modelName })
     } catch (error) {
       throw new Error(`Failed to download model ${modelName}: ${error}`)
     }
@@ -142,7 +142,7 @@ export class OllamaClient {
     }
 
     try {
-      return await invoke<string>('query_ollama', { model, prompt })
+      return await invoke('query_ollama', { model, prompt })
     } catch (error) {
       throw new Error(`Failed to query model ${model}: ${error}`)
     }
@@ -158,7 +158,7 @@ export class OllamaClient {
     }
 
     try {
-      return await invoke<string[]>('list_installed_models')
+      return await invoke('list_installed_models')
     } catch (error) {
       console.error('Failed to list models:', error)
       return []
@@ -190,7 +190,7 @@ export class OllamaClient {
     }
 
     try {
-      return await invoke<ModelInfo[]>('get_model_recommendations')
+      return await invoke('get_model_recommendations')
     } catch (error) {
       console.error('Failed to get model recommendations:', error)
       return []

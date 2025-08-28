@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { DataPanel } from '@/components/data-panel'
 import { ChatPanel } from '@/components/chat-panel'
 import { SPSSDataView } from '@/components/spss-data-view'
+import { BackendStatus } from '@/components/backend-status'
 import { apiClient } from '@/lib/api'
 import { toast } from 'sonner'
 
@@ -43,12 +44,16 @@ export default function Home() {
         toast.success('Backend initialized successfully')
       } catch (error) {
         console.error('Failed to initialize backend:', error)
-        toast.error('Failed to connect to backend. Please ensure the Python server is running on the configured port')
+        // Don't show error toast here - BackendStatus component will handle it
+        setIsBackendReady(false)
       }
     }
 
-    initializeBackend()
-  }, [])
+    // Only try to initialize if backend is ready
+    if (isBackendReady) {
+      initializeBackend()
+    }
+  }, [isBackendReady])
 
   const handleDataViewSave = async (updatedData: any[], variables: any) => {
     if (showDataView && showDataView.dataset_id) {
@@ -95,12 +100,8 @@ export default function Home() {
 
   return (
     <div className="h-screen w-screen bg-muted/20 p-4">
-      {/* Backend status indicator */}
-      {!isBackendReady && (
-        <div className="fixed top-4 right-4 z-50 bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-2 rounded">
-          Connecting to backend...
-        </div>
-      )}
+      {/* Backend Status Component */}
+      <BackendStatus onStatusChange={setIsBackendReady} />
       
       {/* Outer bordered shell */}
       <div className="h-full w-full flex bg-background border border-gray-200 rounded-2xl shadow-sm">

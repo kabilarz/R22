@@ -29,7 +29,7 @@ Write-Host "Starting backend server on http://localhost:8001..." -ForegroundColo
 Write-Host "Press Ctrl+C to stop the server" -ForegroundColor Yellow
 
 try {
-    python simple_app.py
+    python app.py
 } catch {
     Write-Host "ERROR: Failed to start server" -ForegroundColor Red
     Write-Host $_.Exception.Message -ForegroundColor Red

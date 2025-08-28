@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'export', // Required for Tauri desktop app
   trailingSlash: true,
   images: { 
     unoptimized: true 

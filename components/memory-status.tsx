@@ -146,8 +146,8 @@ export function MemoryStatus({ selectedModel, onModelRecommendation }: MemorySta
       
       <CardContent className="pt-0 space-y-4">
         {/* Memory Usage Overview */}
-        <div className=\"space-y-2\">
-          <div className=\"flex items-center justify-between text-xs\">
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-xs">
             <span>Memory Usage</span>
             <span className={getMemoryStatusColor(memoryProfile.memoryUsage)}>
               {memoryProfile.memoryUsage.toFixed(1)}%
@@ -155,25 +155,25 @@ export function MemoryStatus({ selectedModel, onModelRecommendation }: MemorySta
           </div>
           <Progress 
             value={memoryProfile.memoryUsage} 
-            className=\"h-2\"
+            className="h-2"
           />
-          <div className=\"flex justify-between text-xs text-muted-foreground\">
+          <div className="flex justify-between text-xs text-muted-foreground">
             <span>Available: {formatMemory(memoryProfile.availableMemory)}</span>
             <span>Total: {formatMemory(memoryProfile.totalMemory)}</span>
           </div>
         </div>
 
         {/* Current Model Status */}
-        <div className=\"flex items-center justify-between p-2 bg-muted/50 rounded-lg\">
-          <div className=\"flex items-center gap-2\">
+        <div className="flex items-center justify-between p-2 bg-muted/50 rounded-lg">
+          <div className="flex items-center gap-2">
             {selectedModel.includes('gemini') ? (
-              <Cloud className=\"h-4 w-4 text-blue-500\" />
+              <Cloud className="h-4 w-4 text-blue-500" />
             ) : (
-              <Zap className=\"h-4 w-4 text-green-500\" />
+              <Zap className="h-4 w-4 text-green-500" />
             )}
             <div>
-              <div className=\"text-sm font-medium\">{selectedModel}</div>
-              <div className=\"text-xs text-muted-foreground\">
+              <div className="text-sm font-medium">{selectedModel}</div>
+              <div className="text-xs text-muted-foreground">
                 {selectedModel.includes('gemini') ? 'Cloud Model' : 'Local Model'}
               </div>
             </div>
@@ -185,21 +185,21 @@ export function MemoryStatus({ selectedModel, onModelRecommendation }: MemorySta
 
         {/* Recommended Model */}
         {selectedModel !== memoryProfile.recommendedModel && (
-          <div className=\"p-2 bg-blue-50 border border-blue-200 rounded-lg\">
-            <div className=\"flex items-center justify-between\">
+          <div className="p-2 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-center justify-between">
               <div>
-                <div className=\"text-sm font-medium text-blue-900\">
+                <div className="text-sm font-medium text-blue-900">
                   Recommended: {memoryProfile.recommendedModel}
                 </div>
-                <div className=\"text-xs text-blue-700\">
+                <div className="text-xs text-blue-700">
                   Better performance for current memory
                 </div>
               </div>
               <Button 
-                size=\"sm\" 
-                variant=\"outline\"
+                size="sm" 
+                variant="outline"
                 onClick={handleOptimizeModel}
-                className=\"text-blue-700 border-blue-300\"
+                className="text-blue-700 border-blue-300"
               >
                 Switch
               </Button>
@@ -209,23 +209,23 @@ export function MemoryStatus({ selectedModel, onModelRecommendation }: MemorySta
 
         {/* Cached Models */}
         {cachedModels.length > 0 && (
-          <div className=\"space-y-2\">
-            <div className=\"flex items-center justify-between\">
-              <span className=\"text-sm font-medium\">Cached Models</span>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">Cached Models</span>
               <Button
-                variant=\"ghost\"
-                size=\"sm\"
+                variant="ghost"
+                size="sm"
                 onClick={handleClearCache}
-                className=\"h-6 px-2 text-xs\"
+                className="h-6 px-2 text-xs"
               >
-                <Trash2 className=\"h-3 w-3 mr-1\" />
+                <Trash2 className="h-3 w-3 mr-1" />
                 Clear
               </Button>
             </div>
             {cachedModels.map((model) => (
-              <div key={model.name} className=\"flex items-center justify-between text-xs\">
+              <div key={model.name} className="flex items-center justify-between text-xs">
                 <span>{model.name}</span>
-                <span className=\"text-muted-foreground\">{formatMemory(model.memoryUsed)}</span>
+                <span className="text-muted-foreground">{formatMemory(model.memoryUsed)}</span>
               </div>
             ))}
           </div>
@@ -233,36 +233,36 @@ export function MemoryStatus({ selectedModel, onModelRecommendation }: MemorySta
 
         {/* Optimization Settings */}
         {showSettings && optimizationSettings && (
-          <div className=\"space-y-3 pt-2 border-t\">
-            <div className=\"text-sm font-medium\">Optimization Settings</div>
+          <div className="space-y-3 pt-2 border-t">
+            <div className="text-sm font-medium">Optimization Settings</div>
             
-            <div className=\"space-y-2\">
-              <div className=\"flex items-center justify-between\">
-                <span className=\"text-sm\">Garbage Collection</span>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm">Garbage Collection</span>
                 <Switch
                   checked={optimizationSettings.enableGarbageCollection}
                   onCheckedChange={(checked) => handleOptimizationToggle('enableGarbageCollection', checked)}
                 />
               </div>
               
-              <div className=\"flex items-center justify-between\">
-                <span className=\"text-sm\">Model Caching</span>
+              <div className="flex items-center justify-between">
+                <span className="text-sm">Model Caching</span>
                 <Switch
                   checked={optimizationSettings.enableModelCaching}
                   onCheckedChange={(checked) => handleOptimizationToggle('enableModelCaching', checked)}
                 />
               </div>
               
-              <div className=\"flex items-center justify-between\">
-                <span className=\"text-sm\">Context Truncation</span>
+              <div className="flex items-center justify-between">
+                <span className="text-sm">Context Truncation</span>
                 <Switch
                   checked={optimizationSettings.contextTruncation}
                   onCheckedChange={(checked) => handleOptimizationToggle('contextTruncation', checked)}
                 />
               </div>
               
-              <div className=\"flex items-center justify-between\">
-                <span className=\"text-sm\">Batch Optimization</span>
+              <div className="flex items-center justify-between">
+                <span className="text-sm">Batch Optimization</span>
                 <Switch
                   checked={optimizationSettings.batchOptimization}
                   onCheckedChange={(checked) => handleOptimizationToggle('batchOptimization', checked)}
@@ -273,35 +273,35 @@ export function MemoryStatus({ selectedModel, onModelRecommendation }: MemorySta
         )}
 
         {/* Performance Metrics */}
-        <div className=\"grid grid-cols-2 gap-2 text-xs\">
-          <div className=\"p-2 bg-muted/30 rounded\">
-            <div className=\"text-muted-foreground\">Max Context</div>
-            <div className=\"font-medium\">{memoryProfile.maxContextLength}</div>
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          <div className="p-2 bg-muted/30 rounded">
+            <div className="text-muted-foreground">Max Context</div>
+            <div className="font-medium">{memoryProfile.maxContextLength}</div>
           </div>
-          <div className=\"p-2 bg-muted/30 rounded\">
-            <div className=\"text-muted-foreground\">Batch Size</div>
-            <div className=\"font-medium\">{memoryProfile.batchSize}</div>
+          <div className="p-2 bg-muted/30 rounded">
+            <div className="text-muted-foreground">Batch Size</div>
+            <div className="font-medium">{memoryProfile.batchSize}</div>
           </div>
         </div>
 
         {/* Quick Actions */}
-        <div className=\"flex gap-2 pt-2\">
+        <div className="flex gap-2 pt-2">
           <Button
-            variant=\"outline\"
-            size=\"sm\"
+            variant="outline"
+            size="sm"
             onClick={loadMemoryStatus}
-            className=\"flex-1 text-xs\"
+            className="flex-1 text-xs"
           >
-            <TrendingUp className=\"h-3 w-3 mr-1\" />
+            <TrendingUp className="h-3 w-3 mr-1" />
             Refresh
           </Button>
           <Button
-            variant=\"outline\"
-            size=\"sm\"
+            variant="outline"
+            size="sm"
             onClick={handleOptimizeModel}
-            className=\"flex-1 text-xs\"
+            className="flex-1 text-xs"
           >
-            <Zap className=\"h-3 w-3 mr-1\" />
+            <Zap className="h-3 w-3 mr-1" />
             Optimize
           </Button>
         </div>

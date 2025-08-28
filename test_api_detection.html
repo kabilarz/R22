@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Detection Test</title>
+</head>
+<body>
+    <h1>Nemo API Detection Test</h1>
+    <div id="results"></div>
+    
+    <script>
+        const results = document.getElementById('results');
+        
+        function log(message) {
+            results.innerHTML += `<p>${message}</p>`;
+            console.log(message);
+        }
+        
+        // Test Tauri environment detection
+        log('=== ENVIRONMENT DETECTION ===');
+        log(`window.__TAURI__: ${typeof window.__TAURI__}`);
+        log(`Is Tauri Environment: ${typeof window !== 'undefined' && window.__TAURI__ !== undefined}`);
+        
+        // Test API URL logic (same as in api.ts)
+        const isTauriEnvironment = typeof window !== 'undefined' && window.__TAURI__ !== undefined;
+        const API_BASE_URL = isTauriEnvironment 
+          ? 'http://localhost:8001/api'  // Desktop always uses localhost
+          : 'http://localhost:8001/api'; // Fallback for testing
+          
+        log(`=== API CONFIGURATION ===`);
+        log(`API Base URL: ${API_BASE_URL}`);
+        
+        // Test actual API connection
+        log(`=== TESTING API CONNECTION ===`);
+        
+        fetch(`${API_BASE_URL}/health`)
+            .then(response => {
+                log(`Response Status: ${response.status}`);
+                log(`Response OK: ${response.ok}`);
+                return response.json();
+            })
+            .then(data => {
+                log(`Response Data: ${JSON.stringify(data)}`);
+                log('✅ API CONNECTION SUCCESSFUL!');
+            })
+            .catch(error => {
+                log(`❌ API CONNECTION FAILED: ${error.message}`);
+                
+                // Test direct fetch to backend
+                fetch('http://localhost:8001/api/health')
+                    .then(response => response.json())
+                    .then(data => {
+                        log(`✅ Direct backend test successful: ${JSON.stringify(data)}`);
+                        log(`❌ Issue is with API URL detection in app`);
+                    })
+                    .catch(directError => {
+                        log(`❌ Direct backend test also failed: ${directError.message}`);
+                    });
+            });
+    </script>
+</body>
+</html>

@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { AlertCircle, Download, CheckCircle, Cpu, HardDrive, Monitor, Zap, Info } from 'lucide-react'
 import { toast } from 'sonner'
 import { ollamaClient, HardwareInfo, ModelInfo } from '@/lib/ollama-client'
+import { GeminiConfig } from '@/components/gemini-config'
 
 interface ModelSelectorProps {
   selectedModel: string
@@ -173,14 +174,24 @@ export function ModelSelector({ selectedModel, onModelChange, onModelReady }: Mo
           toast.success('Ollama started successfully!')
           const models = await ollamaClient.listInstalledModels()
           setInstalledModels(models)
-          onModelReady(models.length > 0)
+          
+          // Refresh hardware info after starting Ollama
+          try {
+            const updatedHwInfo = await ollamaClient.getHardwareInfo()
+            setHardware(updatedHwInfo)
+          } catch (error) {
+            console.warn('Failed to refresh hardware info after Ollama start:', error)
+          }
+          
+          onModelReady(models.length > 0 || true) // Cloud models are still available
         } else {
           toast.error('Failed to start Ollama. Please install Ollama first.')
         }
       }, 3000)
       
     } catch (error) {
-      toast.error(`Failed to start Ollama: ${error}`)
+      console.error('Failed to start Ollama:', error)
+      toast.error(`Failed to start Ollama: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
 
@@ -283,6 +294,9 @@ export function ModelSelector({ selectedModel, onModelChange, onModelReady }: Mo
         <Info className="h-4 w-4" />
         Setup Local AI
       </Button>
+
+      {/* Gemini API Configuration */}
+      <GeminiConfig />
 
       {/* Setup Dialog */}
       <Dialog open={isSetupOpen} onOpenChange={setIsSetupOpen}>
