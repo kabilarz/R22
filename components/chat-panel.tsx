@@ -1,21 +1,18 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
-import { MessageSquare, Send, Bot, User, FileText, BarChart3, Lightbulb, Code } from 'lucide-react'
+import { MessageSquare, Send, Bot, User, FileText, Code } from 'lucide-react'
 import { toast } from 'sonner'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Label } from '@/components/ui/label'
-import { Input } from '@/components/ui/input'
 import { MarkdownRenderer } from '@/components/markdown-renderer'
 import { ModelSelector } from '@/components/model-selector'
 import { apiClient } from '@/lib/api'
-import { aiService } from '@/lib/ai-service'
+import { aiService, AnalysisResponse } from '@/lib/ai-service'
+import { TestSuggestion } from '@/lib/test-suggestion-engine'
 
 interface UploadedFile {
   id: string
@@ -29,10 +26,11 @@ interface UploadedFile {
 
 interface Message {
   id: string
-  type: 'user' | 'assistant'
+  type: 'user' | 'assistant' | 'suggestions'
   content: string
   timestamp: Date
   fileContext?: string
+  suggestions?: TestSuggestion[]
 }
 
 interface ChatPanelProps {
@@ -49,20 +47,46 @@ export function ChatPanel({ selectedFile, currentChatId, isBackendReady }: ChatP
   const [isModelReady, setIsModelReady] = useState(false)
   const [pythonOutput, setPythonOutput] = useState<string | null>(null)
   const [isExecutingCode, setIsExecutingCode] = useState(false)
-  const [showTTestDialog, setShowTTestDialog] = useState(false)
-  const [tTestParams, setTTestParams] = useState({
-    groupCol: '',
-    valueCol: '',
-    whereSql: ''
-  })
+  const [pendingSuggestions, setPendingSuggestions] = useState<TestSuggestion[] | null>(null)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  useEffect(() => {
+  // Enhanced auto-scroll function with forced scroll
+  const scrollToBottom = useCallback(() => {
     if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight
+      const scrollArea = scrollAreaRef.current
+      // Force scroll to bottom immediately
+      scrollArea.scrollTop = scrollArea.scrollHeight
+      // Also try scrollIntoView as backup
+      const lastMessage = scrollArea.lastElementChild
+      if (lastMessage) {
+        lastMessage.scrollIntoView({ behavior: 'smooth', block: 'end' })
+      }
     }
-  }, [messages])
+  }, [])
+
+  // Auto-scroll when messages change with better timing
+  useEffect(() => {
+    // Use both requestAnimationFrame and setTimeout for better reliability
+    requestAnimationFrame(() => {
+      setTimeout(scrollToBottom, 50)
+    })
+  }, [messages, scrollToBottom])
+
+  // Also scroll when Python output changes
+  useEffect(() => {
+    if (pythonOutput) {
+      setTimeout(scrollToBottom, 100)
+    }
+  }, [pythonOutput, scrollToBottom])
+
+  // Also scroll when loading state changes (for immediate feedback)
+  useEffect(() => {
+    if (!isLoading) {
+      // Small delay to ensure content is rendered
+      setTimeout(scrollToBottom, 100)
+    }
+  }, [isLoading, scrollToBottom])
 
   useEffect(() => {
     if (selectedFile) {
@@ -77,19 +101,23 @@ export function ChatPanel({ selectedFile, currentChatId, isBackendReady }: ChatP
 • "What insights can you find?"
 
 **Statistical Analysis Tools:**
-• Click the "Run t-test" button below to perform statistical comparisons
 • Use natural language to generate analysis code
+• Click the "Run" button on any Python code blocks
 
 **Example Queries:**
 • "Calculate average age by gender"
 • "Show correlation between BMI and blood pressure"
 • "Find patients with high risk factors"
+• "Perform a t-test comparing groups"
+• "Generate descriptive statistics"
 
 What would you like to know about your data?`,
         timestamp: new Date(),
         fileContext: selectedFile.name
       }
       setMessages([welcomeMessage])
+      // Scroll to show welcome message
+      setTimeout(scrollToBottom, 200)
     }
   }, [selectedFile])
 
@@ -116,6 +144,12 @@ What would you like to know about your data?`,
 
     setMessages(prev => [...prev, userMessage])
     setInputMessage('')
+    
+    // Force immediate scroll to show user message
+    requestAnimationFrame(() => {
+      scrollToBottom()
+    })
+    
     setIsLoading(true)
 
     try {
@@ -128,18 +162,38 @@ Rows: ${selectedFile.data.length}
 Columns: ${columns.join(', ')}
 Sample data: ${JSON.stringify(sampleData, null, 2)}`
 
-      // Use the AI service to handle both local and cloud models
-      const response = await aiService.generateAnalysisCode(selectedModel, inputMessage, dataContext)
+      // Use the enhanced AI service that can suggest tests
+      const response = await aiService.generateAnalysisResponse(selectedModel, inputMessage, dataContext, selectedFile)
       
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        type: 'assistant',
-        content: response,
-        timestamp: new Date(),
-        fileContext: selectedFile.name
+      if (response.type === 'suggestions') {
+        // Show test suggestions
+        const suggestionsMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          type: 'suggestions',
+          content: response.explanation || 'Here are some statistical tests that might help:',
+          timestamp: new Date(),
+          fileContext: selectedFile.name,
+          suggestions: response.suggestions
+        }
+        
+        setMessages(prev => [...prev, suggestionsMessage])
+        setPendingSuggestions(response.suggestions || null)
+        // Ensure scroll to new suggestions
+        setTimeout(scrollToBottom, 100)
+      } else {
+        // Show generated code
+        const assistantMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          type: 'assistant',
+          content: response.code || '',
+          timestamp: new Date(),
+          fileContext: selectedFile.name
+        }
+        
+        setMessages(prev => [...prev, assistantMessage])
+        // Ensure scroll to new assistant message
+        setTimeout(scrollToBottom, 100)
       }
-
-      setMessages(prev => [...prev, assistantMessage])
     } catch (error) {
       toast.error('Failed to send message. Please try again.')
       console.error('Chat error:', error)
@@ -153,6 +207,8 @@ Sample data: ${JSON.stringify(sampleData, null, 2)}`
       }
       
       setMessages(prev => [...prev, errorMessage])
+      // Ensure scroll to error message
+      setTimeout(scrollToBottom, 100)
     } finally {
       setIsLoading(false)
     }
@@ -165,14 +221,42 @@ Sample data: ${JSON.stringify(sampleData, null, 2)}`
     }
   }
 
-  const handleQuickQuery = async (query: string) => {
-    setInputMessage(query)
-    // Auto-send the query
-    setTimeout(() => {
-      if (textareaRef.current) {
-        textareaRef.current.focus()
+  const handleTestSelection = async (selectedTest: TestSuggestion) => {
+    if (!selectedFile || !isModelReady) return
+    
+    setIsLoading(true)
+    setPendingSuggestions(null)
+    
+    try {
+      // Create data context for the AI
+      const columns = selectedFile.data.length > 0 ? Object.keys(selectedFile.data[0]) : []
+      const sampleData = selectedFile.data.slice(0, 3)
+      const dataContext = `
+Dataset: ${selectedFile.name}
+Rows: ${selectedFile.data.length}
+Columns: ${columns.join(', ')}
+Sample data: ${JSON.stringify(sampleData, null, 2)}`
+
+      // Generate specific code for the selected test
+      const code = await aiService.generateTestCode(selectedTest, selectedModel, inputMessage, dataContext)
+      
+      const codeMessage: Message = {
+        id: (Date.now() + 2).toString(),
+        type: 'assistant',
+        content: `## ${selectedTest.test.name}\n\n**Why this test:** ${selectedTest.reasoning}\n\n\`\`\`python\n${code}\n\`\`\``,
+        timestamp: new Date(),
+        fileContext: selectedFile.name
       }
-    }, 100)
+      
+      setMessages(prev => [...prev, codeMessage])
+      // Ensure scroll to new code message
+      setTimeout(scrollToBottom, 100)
+    } catch (error) {
+      toast.error('Failed to generate test code. Please try again.')
+      console.error('Test code generation error:', error)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const handleRunPythonCode = async (code: string, language: string) => {
@@ -211,82 +295,7 @@ Sample data: ${JSON.stringify(sampleData, null, 2)}`
     }
   }
 
-  const handleRunTTest = async () => {
-    if (!selectedFile || !selectedFile.dataset_id || !currentChatId || !isBackendReady) {
-      toast.error('Backend is not ready or file not properly uploaded')
-      return
-    }
 
-    if (!tTestParams.groupCol || !tTestParams.valueCol) {
-      toast.error('Please select both group and value columns')
-      return
-    }
-
-    try {
-      setIsLoading(true)
-      
-      const result = await apiClient.runTTest(
-        currentChatId,
-        selectedFile.dataset_id,
-        tTestParams.groupCol,
-        tTestParams.valueCol,
-        tTestParams.whereSql || undefined
-      )
-
-      // Format the results as a message
-      let resultContent = `## T-Test Results\n\n`
-      
-      if (result.error) {
-        resultContent += `**Error:** ${result.error}\n\n`
-      }
-      
-      resultContent += `**Analysis Details:**\n`
-      resultContent += `- Group Column: ${tTestParams.groupCol}\n`
-      resultContent += `- Value Column: ${tTestParams.valueCol}\n\n`
-      
-      resultContent += `**Sample Sizes:**\n`
-      resultContent += `- Group 1 (Male): ${result.n_male}\n`
-      resultContent += `- Group 2 (Female): ${result.n_female}\n\n`
-      
-      if (result.mean_male !== null && result.mean_female !== null) {
-        resultContent += `**Group Means:**\n`
-        resultContent += `- Male Mean: ${result.mean_male.toFixed(4)}\n`
-        resultContent += `- Female Mean: ${result.mean_female.toFixed(4)}\n\n`
-      }
-      
-      if (result.levene_p !== null && result.t_stat !== null && result.p_value !== null) {
-        resultContent += `**Statistical Test Results:**\n`
-        resultContent += `- Levene's Test p-value: ${result.levene_p.toFixed(6)}\n`
-        resultContent += `- Equal variances assumed: ${result.equal_var_assumed ? 'Yes' : 'No'}\n`
-        resultContent += `- t-statistic: ${result.t_stat.toFixed(4)}\n`
-        resultContent += `- p-value: ${result.p_value.toFixed(6)}\n\n`
-        
-        resultContent += `**Interpretation:**\n`
-        if (result.p_value < 0.05) {
-          resultContent += `- The difference between groups is **statistically significant** (p < 0.05)\n`
-        } else {
-          resultContent += `- The difference between groups is **not statistically significant** (p ≥ 0.05)\n`
-        }
-      }
-
-      const assistantMessage: Message = {
-        id: Date.now().toString(),
-        type: 'assistant',
-        content: resultContent,
-        timestamp: new Date(),
-        fileContext: selectedFile.name
-      }
-
-      setMessages(prev => [...prev, assistantMessage])
-      setShowTTestDialog(false)
-      toast.success('T-test completed successfully')
-      
-    } catch (error) {
-      toast.error(`Failed to run t-test: ${error instanceof Error ? error.message : 'Unknown error'}`)
-    } finally {
-      setIsLoading(false)
-    }
-  }
 
   const getAvailableColumns = () => {
     if (!selectedFile || selectedFile.data.length === 0) return []
@@ -327,56 +336,21 @@ Sample data: ${JSON.stringify(sampleData, null, 2)}`
   }
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="p-2 border-b">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+    <div className="h-full flex flex-col overflow-hidden w-full max-w-full">
+      <div className="p-2 border-b flex-shrink-0 overflow-hidden w-full max-w-full">
+        <div className="flex items-center justify-between min-w-0 w-full max-w-full">
+          <div className="flex items-center gap-3 min-w-0 overflow-hidden flex-1">
             <ModelSelector
               selectedModel={selectedModel}
               onModelChange={setSelectedModel}
               onModelReady={setIsModelReady}
             />
           </div>
-          
-          {selectedFile && (
-            <div className="flex items-center gap-2">
-              {/* Quick query examples */}
-              <div className="hidden md:flex items-center gap-1">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleQuickQuery("Show basic statistics for all variables")}
-                  className="text-xs"
-                >
-                  <BarChart3 className="h-3 w-3 mr-1" />
-                  Stats
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleQuickQuery("Compare key metrics by gender")}
-                  className="text-xs"
-                >
-                  <User className="h-3 w-3 mr-1" />
-                  Gender
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleQuickQuery("Find correlations between numeric variables")}
-                  className="text-xs"
-                >
-                  <Lightbulb className="h-3 w-3 mr-1" />
-                  Insights
-                </Button>
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <ScrollArea ref={scrollAreaRef} className="flex-1 p-2">
+      <div className="flex-1 flex flex-col overflow-hidden min-h-0 w-full max-w-full">
+        <ScrollArea ref={scrollAreaRef} className="flex-1 p-2 w-full max-w-full overflow-hidden">
           {!selectedFile && (
             <div className="h-full flex items-center justify-center">
               <div className="text-center">
@@ -393,29 +367,77 @@ Sample data: ${JSON.stringify(sampleData, null, 2)}`
             <>
               {getDataPreview()}
               
-              <div className="space-y-4">
+              <div className="space-y-4 w-full max-w-full overflow-hidden">
                 {messages.map((message) => (
                   <div
                     key={message.id}
-                    className={`flex gap-3 ${
+                    className={`flex gap-3 w-full max-w-full overflow-hidden ${
                       message.type === 'user' ? 'justify-end' : 'justify-start'
                     }`}
                   >
-                    <div className={`max-w-[80%] ${message.type === 'user' ? 'order-2' : ''}`}>
+                    <div className={`w-full max-w-[80%] min-w-0 overflow-hidden ${message.type === 'user' ? 'order-2' : ''}`}>
                       <div
-                        className={`rounded-lg p-3 ${
+                        className={`rounded-lg p-3 w-full max-w-full overflow-hidden ${
                           message.type === 'user'
                             ? 'bg-primary text-primary-foreground ml-auto'
+                            : message.type === 'suggestions'
+                            ? 'bg-blue-50 border border-blue-200'
                             : 'bg-muted'
                         }`}
                       >
-                        {message.type === 'assistant' ? (
-                          <MarkdownRenderer 
-                            content={message.content} 
-                            onRunCode={handleRunPythonCode}
-                          />
+                        {message.type === 'suggestions' ? (
+                          <div className="space-y-3 w-full max-w-full overflow-hidden">
+                            <div className="text-sm font-medium text-blue-800 break-words">
+                              {message.content}
+                            </div>
+                            
+                            {message.suggestions && (
+                              <div className="space-y-2 w-full max-w-full overflow-hidden">
+                                {message.suggestions.map((suggestion, index) => (
+                                  <div key={index} className="border border-blue-300 rounded-lg p-3 bg-white w-full max-w-full overflow-hidden">
+                                    <div className="flex items-start justify-between w-full max-w-full overflow-hidden">
+                                      <div className="flex-1 min-w-0 overflow-hidden">
+                                        <div className="font-medium text-sm text-gray-900 break-words">
+                                          {suggestion.test.name}
+                                        </div>
+                                        <div className="text-xs text-gray-600 mt-1 break-words">
+                                          {suggestion.test.description}
+                                        </div>
+                                        <div className="text-xs text-blue-600 mt-2 break-words">
+                                          {suggestion.reasoning}
+                                        </div>
+                                        <div className="flex gap-1 mt-2 flex-wrap">
+                                          <Badge variant="outline" className="text-xs">
+                                            {suggestion.test.category}
+                                          </Badge>
+                                          <Badge variant="secondary" className="text-xs">
+                                            {Math.round(suggestion.test.confidenceScore * 100)}% match
+                                          </Badge>
+                                        </div>
+                                      </div>
+                                      <Button
+                                        size="sm"
+                                        onClick={() => handleTestSelection(suggestion)}
+                                        disabled={isLoading}
+                                        className="ml-3 flex-shrink-0"
+                                      >
+                                        Select
+                                      </Button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ) : message.type === 'assistant' ? (
+                          <div className="w-full max-w-full overflow-hidden">
+                            <MarkdownRenderer 
+                              content={message.content} 
+                              onRunCode={handleRunPythonCode}
+                            />
+                          </div>
                         ) : (
-                          <div className="whitespace-pre-wrap text-sm">{message.content}</div>
+                          <div className="whitespace-pre-wrap text-sm break-words overflow-wrap-anywhere max-w-full overflow-hidden">{message.content}</div>
                         )}
                         <div className={`text-xs mt-2 opacity-70 ${
                           message.type === 'user' ? 'text-right' : 'text-left'
@@ -453,111 +475,61 @@ Sample data: ${JSON.stringify(sampleData, null, 2)}`
                   </div>
                 </div>
               )}
+
+              {/* Python Output Display */}
+              {pythonOutput && (
+                <Card className="mt-4 border-green-200 bg-green-50 w-full max-w-full overflow-hidden">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm flex items-center gap-2 text-green-800">
+                      <Code className="h-4 w-4" />
+                      Python Execution Results
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="bg-white border border-green-200 rounded-md p-3 w-full max-w-full overflow-hidden">
+                      <pre className="text-xs font-mono whitespace-pre-wrap text-green-900 break-all word-break-all max-w-full overflow-hidden">
+                        {pythonOutput}
+                      </pre>
+                    </div>
+                    <div className="flex justify-end mt-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPythonOutput(null)}
+                        className="text-xs"
+                      >
+                        Clear Output
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </>
           )}
         </ScrollArea>
 
         {selectedFile && (
-          <div className="p-2 border-t">
-            <div className="flex gap-2 mb-2">
-              <Dialog open={showTTestDialog} onOpenChange={setShowTTestDialog}>
-                <DialogTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    disabled={!isBackendReady || !selectedFile?.dataset_id}
-                    className="text-xs"
-                  >
-                    Run t-test
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px]">
-                  <DialogHeader>
-                    <DialogTitle>Configure t-test Analysis</DialogTitle>
-                    <DialogDescription>
-                      Select columns to compare groups in your dataset.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="group-col" className="text-right">
-                        Group Column
-                      </Label>
-                      <Select 
-                        value={tTestParams.groupCol} 
-                        onValueChange={(value) => setTTestParams(prev => ({ ...prev, groupCol: value }))}
-                      >
-                        <SelectTrigger className="col-span-3">
-                          <SelectValue placeholder="Select grouping column (e.g., gender)" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {getAvailableColumns().map(col => (
-                            <SelectItem key={col} value={col}>{col}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="value-col" className="text-right">
-                        Value Column
-                      </Label>
-                      <Select 
-                        value={tTestParams.valueCol} 
-                        onValueChange={(value) => setTTestParams(prev => ({ ...prev, valueCol: value }))}
-                      >
-                        <SelectTrigger className="col-span-3">
-                          <SelectValue placeholder="Select value column (e.g., BMI)" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {getAvailableColumns().map(col => (
-                            <SelectItem key={col} value={col}>{col}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="where-sql" className="text-right">
-                        Filter (SQL)
-                      </Label>
-                      <Input
-                        id="where-sql"
-                        placeholder="Optional WHERE clause"
-                        value={tTestParams.whereSql}
-                        onChange={(e) => setTTestParams(prev => ({ ...prev, whereSql: e.target.value }))}
-                        className="col-span-3"
-                      />
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button 
-                      onClick={handleRunTTest}
-                      disabled={!tTestParams.groupCol || !tTestParams.valueCol || isLoading}
-                    >
-                      {isLoading ? 'Running...' : 'Run t-test'}
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            </div>
-            <div className="flex gap-2">
+          <div className="p-2 border-t flex-shrink-0">
+            <div className="flex gap-2 min-w-0">
               <Textarea
                 ref={textareaRef}
                 placeholder="Ask me anything about your data..."
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
-                className="min-h-[60px] resize-none"
+                className="min-h-[60px] resize-none flex-1 min-w-0"
                 disabled={isLoading}
               />
               <Button
                 onClick={sendMessage}
                 disabled={!inputMessage.trim() || isLoading}
                 size="sm"
-                className="self-end"
+                className="self-end flex-shrink-0"
               >
                 <Send className="h-4 w-4" />
               </Button>
-            </div></div>
+            </div>
+          </div>
         )}
       </div>
     </div>

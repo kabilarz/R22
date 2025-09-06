@@ -18,7 +18,8 @@ import sys
 from data_store import (
     init_store, start_chat, save_dataset, upsert_variables, 
     get_variables, get_dataset_info, log_run, get_chat_history,
-    get_all_datasets
+    get_all_datasets, save_dataset_with_activation, activate_dataset,
+    get_all_datasets_with_status
 )
 from analyses import (
     run_ttest, get_dataset_summary, run_descriptive_stats, 
@@ -62,6 +63,12 @@ from comprehensive_visualizations import (
     generate_histogram, generate_density_plot, generate_box_plot,
     generate_violin_plot, generate_qq_plot, generate_pareto_chart
 )
+
+# Import plugin management system
+from plugin_manager import plugin_manager_backend
+
+# Import enhanced Python executor
+from enhanced_python_executor import python_executor
 
 app = FastAPI(title="Statistical Analysis API", version="1.0.0")
 
@@ -157,12 +164,14 @@ class ANOVARequest(BaseModel):
 class PythonExecutionRequest(BaseModel):
     code: str
     fileName: str
-    fileData: List[Dict[str, Any]]
+    fileData: Optional[List[Dict[str, Any]]] = []  # Optional for tab-based system
 
 class PythonExecutionResponse(BaseModel):
     output: str
     error: Optional[str] = None
     success: bool
+    execution_time: Optional[float] = None
+    memory_used_mb: Optional[int] = None
 
 @api_router.post("/init", response_model=InitResponse)
 async def initialize_database():
@@ -205,8 +214,8 @@ async def upload_dataset(file: UploadFile = File(...)):
         if df.empty:
             raise HTTPException(status_code=400, detail="Uploaded file is empty")
         
-        # Save dataset
-        dataset_id = save_dataset(df, file.filename)
+        # Save dataset with auto-activation
+        dataset_id = save_dataset_with_activation(df, file.filename)
         
         return DatasetUploadResponse(
             dataset_id=dataset_id,
@@ -216,6 +225,27 @@ async def upload_dataset(file: UploadFile = File(...)):
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to upload dataset: {str(e)}")
+
+@api_router.get("/datasets")
+async def get_datasets():
+    """Get all datasets with activation status."""
+    try:
+        datasets = get_all_datasets_with_status()
+        return {"datasets": datasets}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get datasets: {str(e)}")
+
+@api_router.post("/datasets/{dataset_id}/activate")
+async def activate_dataset_endpoint(dataset_id: str):
+    """Activate a dataset for analysis."""
+    try:
+        success = activate_dataset(dataset_id)
+        if success:
+            return {"success": True, "message": f"Dataset {dataset_id} activated"}
+        else:
+            raise HTTPException(status_code=404, detail="Dataset not found")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to activate dataset: {str(e)}")
 
 @api_router.put("/variables/{dataset_id}", response_model=SuccessResponse)
 async def update_variables(dataset_id: str, request: VariablesUpdateRequest):
@@ -403,105 +433,75 @@ async def perform_anova(request: ANOVARequest):
 
 @api_router.post("/execute-python", response_model=PythonExecutionResponse)
 async def execute_python_code(request: PythonExecutionRequest):
-    """Execute Python code with the provided dataset."""
+    """Execute Python code with DuckDB integration - supports both legacy AI chat and new tab-based system."""
     try:
-        # Create a temporary file for the dataset
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as temp_file:
-            json.dump(request.fileData, temp_file)
-            temp_file_path = temp_file.name
-
-        # Prepare Python code with data loading
-        python_code = f"""
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
-import json
-import sys
-import io
-from contextlib import redirect_stdout, redirect_stderr
-
-# Load the dataset
-with open('{temp_file_path}', 'r') as f:
-    data = json.load(f)
-
-df = pd.DataFrame(data)
-
-# Capture output
-output_buffer = io.StringIO()
-error_buffer = io.StringIO()
-
-try:
-    with redirect_stdout(output_buffer), redirect_stderr(error_buffer):
-        # User code starts here
-{request.code}
-        # User code ends here
-        
-    # Get the output
-    output = output_buffer.getvalue()
-    errors = error_buffer.getvalue()
-    
-    if errors:
-        print("STDERR:", errors)
-    
-    print("EXECUTION_COMPLETE")
-    
-except Exception as e:
-    print(f"EXECUTION_ERROR: {{str(e)}}")
-    import traceback
-    traceback.print_exc()
-"""
-
-        # Execute the Python code
-        result = subprocess.run(
-            [sys.executable, '-c', python_code],
-            capture_output=True,
-            text=True,
-            timeout=30  # 30 second timeout
-        )
-
-        # Clean up temporary file
-        try:
-            os.unlink(temp_file_path)
-        except:
-            pass
-
-        # Parse the output
-        output = result.stdout
-        error_output = result.stderr
-        
-        success = result.returncode == 0 and "EXECUTION_ERROR:" not in output
-        
-        if not success and error_output:
-            error_output = f"Process error: {error_output}"
-        elif "EXECUTION_ERROR:" in output:
-            # Extract the error from output
-            error_lines = [line for line in output.split('\n') if 'EXECUTION_ERROR:' in line]
-            if error_lines:
-                error_output = error_lines[0].replace('EXECUTION_ERROR: ', '')
-        
-        # Clean the output
-        if "EXECUTION_COMPLETE" in output:
-            output = output.replace("EXECUTION_COMPLETE", "").strip()
+        # NEW TAB-BASED SYSTEM: Use active dataset if no fileData provided
+        if not request.fileData or len(request.fileData) == 0:
+            # Tab-based system - AI queries active dataset through v_user_data view
+            result = python_executor.execute_code_with_duckdb(
+                code=request.code,
+                dataset_id="active",  # Uses v_user_data view in executor
+                filename=request.fileName or "active_dataset.csv"
+            )
+        else:
+            # LEGACY AI CHAT: Store data temporarily for AI-generated analysis
+            df = pd.DataFrame(request.fileData)
+            dataset_id = save_dataset_with_activation(df, request.fileName)
+            
+            # Execute code using DuckDB-based executor
+            result = python_executor.execute_code_with_duckdb(
+                code=request.code,
+                dataset_id=dataset_id,
+                filename=request.fileName
+            )
         
         return PythonExecutionResponse(
-            output=output,
-            error=error_output if error_output else None,
-            success=success
-        )
-
-    except subprocess.TimeoutExpired:
-        return PythonExecutionResponse(
-            output="",
-            error="Code execution timed out (30 seconds limit)",
-            success=False
+            output=result.output,
+            error=result.error,
+            success=result.success,
+            execution_time=result.execution_time,
+            memory_used_mb=result.memory_used
         )
     except Exception as e:
         return PythonExecutionResponse(
             output="",
             error=f"Failed to execute Python code: {str(e)}",
-            success=False
+            success=False,
+            execution_time=0.0,
+            memory_used_mb=0.0
         )
+        
+@api_router.get("/python/stats")
+async def get_python_execution_stats():
+    """Get Python execution environment statistics."""
+    try:
+        stats = python_executor.get_execution_stats()
+        return {
+            "success": True,
+            "stats": stats
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
+@api_router.get("/python/libraries")
+async def check_python_libraries():
+    """Check availability of medical/statistical libraries."""
+    try:
+        libraries = python_executor.check_library_availability()
+        return {
+            "success": True,
+            "libraries": libraries,
+            "available_count": sum(libraries.values()),
+            "total_count": len(libraries)
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e)
+        }
 
 # Include the API router in the main app
 app.include_router(api_router)
@@ -1367,6 +1367,62 @@ async def get_available_visualizations():
         ],
         "total_visualizations": 100
     }
+
+# ========================
+# PLUGIN MANAGEMENT API ENDPOINTS
+# ========================
+
+class PluginInstallRequest(BaseModel):
+    plugin_id: str
+
+class PluginUninstallRequest(BaseModel):
+    plugin_id: str
+
+@api_router.get("/plugins/status")
+async def get_plugin_status():
+    """Get status of all available plugins."""
+    try:
+        status = plugin_manager_backend.get_all_plugins_status()
+        return status
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get plugin status: {str(e)}")
+
+@api_router.get("/plugins/{plugin_id}")
+async def get_plugin_info(plugin_id: str):
+    """Get detailed information about a specific plugin."""
+    try:
+        info = plugin_manager_backend.get_plugin_info(plugin_id)
+        return info
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get plugin info: {str(e)}")
+
+@api_router.post("/plugins/install")
+async def install_plugin(request: PluginInstallRequest):
+    """Install a statistical test plugin."""
+    try:
+        result = plugin_manager_backend.install_plugin(request.plugin_id)
+        if result["success"]:
+            return result
+        else:
+            raise HTTPException(status_code=400, detail=result["error"])
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to install plugin: {str(e)}")
+
+@api_router.post("/plugins/uninstall")
+async def uninstall_plugin(request: PluginUninstallRequest):
+    """Uninstall a statistical test plugin."""
+    try:
+        result = plugin_manager_backend.uninstall_plugin(request.plugin_id)
+        if result["success"]:
+            return result
+        else:
+            raise HTTPException(status_code=400, detail=result["error"])
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to uninstall plugin: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn

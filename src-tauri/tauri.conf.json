@@ -46,7 +46,10 @@
     "copyright": "Copyright © 2025 Nemo Analytics. All rights reserved.",
     "licenseFile": "LICENSE",
     "resources": [
-      "../backend"
+      "../backend",
+      "resources/python/**/*",
+      "resources/ollama/**/*",
+      "resources/models/**/*"
     ],
     "windows": {
       "nsis": {

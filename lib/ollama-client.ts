@@ -119,55 +119,94 @@ export class OllamaClient {
   }
 
   /**
-   * Download a model
+   * Download a model with enhanced debugging
    */
   async downloadModel(modelName: string): Promise<string> {
+    console.log(`🔄 [OllamaClient] Starting download for model: ${modelName}`)
+    
     if (!this.isTauriAvailable()) {
-      throw new Error('Model download not available in browser mode. Please use the desktop application.')
+      const error = 'Model download not available in browser mode. Please use the desktop application.'
+      console.error(`❌ [OllamaClient] ${error}`)
+      throw new Error(error)
     }
 
     try {
-      return await invoke('download_model', { modelName })
+      console.log(`🚀 [OllamaClient] Invoking Tauri command 'download_model' with modelName: ${modelName}`)
+      
+      const result = await invoke('download_model', { modelName })
+      
+      console.log(`✅ [OllamaClient] Download successful:`, result)
+      return result as string
+      
     } catch (error) {
+      console.error(`❌ [OllamaClient] Download failed for ${modelName}:`, error)
       throw new Error(`Failed to download model ${modelName}: ${error}`)
     }
   }
 
   /**
-   * Query a local LLM
+   * Check Ollama status with debugging
    */
-  async query(model: string, prompt: string): Promise<string> {
+  async checkStatus(): Promise<boolean> {
+    console.log(`🔍 [OllamaClient] Checking Ollama status...`)
+    
     if (!this.isTauriAvailable()) {
-      throw new Error('Local model queries not available in browser mode. Please use cloud models or the desktop application.')
+      console.log(`🌐 [OllamaClient] Browser mode - local AI not available`)
+      return false
     }
 
     try {
-      return await invoke('query_ollama', { model, prompt })
+      const status = await invoke('check_ollama_status')
+      console.log(`📊 [OllamaClient] Ollama status:`, status)
+      return status as boolean
     } catch (error) {
+      console.error(`❌ [OllamaClient] Failed to check Ollama status:`, error)
+      return false
+    }
+  }
+
+  /**
+   * List installed models with debugging
+   */
+  async listInstalledModels(): Promise<string[]> {
+    console.log(`📋 [OllamaClient] Fetching installed models...`)
+    
+    if (!this.isTauriAvailable()) {
+      console.log(`🌐 [OllamaClient] Browser mode - no local models available`)
+      return []
+    }
+
+    try {
+      const models = await invoke('list_installed_models')
+      console.log(`📦 [OllamaClient] Installed models:`, models)
+      return models as string[]
+    } catch (error) {
+      console.error(`❌ [OllamaClient] Failed to list models:`, error)
+      return []
+    }
+  }
+
+  /**
+   * Query a local LLM with debugging
+   */
+  async query(model: string, prompt: string): Promise<string> {
+    console.log(`🤖 [OllamaClient] Querying model: ${model} with prompt length: ${prompt.length}`)
+    
+    if (!this.isTauriAvailable()) {
+      const error = 'Local model queries not available in browser mode. Please use cloud models or the desktop application.'
+      console.error(`❌ [OllamaClient] ${error}`)
+      throw new Error(error)
+    }
+
+    try {
+      const result = await invoke('query_ollama', { model, prompt })
+      console.log(`✅ [OllamaClient] Query successful, response length:`, (result as string).length)
+      return result as string
+    } catch (error) {
+      console.error(`❌ [OllamaClient] Query failed for model ${model}:`, error)
       throw new Error(`Failed to query model ${model}: ${error}`)
     }
   }
-
-  /**
-   * Get list of installed models
-   */
-  async listInstalledModels(): Promise<string[]> {
-    if (!this.isTauriAvailable()) {
-      console.log('Local models not available in browser mode')
-      return []
-    }
-
-    try {
-      return await invoke('list_installed_models')
-    } catch (error) {
-      console.error('Failed to list models:', error)
-      return []
-    }
-  }
-
-  /**
-   * Get model recommendations based on hardware
-   */
   async getModelRecommendations(): Promise<ModelInfo[]> {
     if (!this.isTauriAvailable()) {
       // Return basic cloud model recommendations for browser mode
@@ -226,6 +265,8 @@ export class OllamaClient {
   private buildAnalysisPrompt(userQuery: string, dataContext: string): string {
     return `You are a medical data analysis assistant. Generate Python pandas code to analyze the given dataset.
 
+IMPORTANT: The DataFrame 'df' is already loaded from DuckDB - DO NOT use pd.read_csv() or any file reading commands!
+
 Dataset Context:
 ${dataContext}
 
@@ -236,11 +277,49 @@ Please provide:
 2. Brief explanation of the analysis
 3. Any important medical insights
 
-Requirements:
-- Use 'df' as the DataFrame variable name
+CRITICAL REQUIREMENTS:
+- The variable 'df' is already available - DO NOT read files with pd.read_csv()
+- Use 'pd' for pandas operations (pd.DataFrame, etc.) - 'pandas' and 'pd' are both imported
+- Start directly with data analysis using 'df'
 - Include error handling
 - Provide clear variable names
 - Add comments explaining medical significance
+- For plots: ensure data length matches - use df.groupby() for summary data
+- Avoid length mismatches in plotting by using aggregated data
+
+EXAMPLE CORRECT CODE:
+# df is already loaded - just use it!
+print("Dataset shape:", df.shape)
+
+# Always check for numeric columns first
+numeric_cols = df.select_dtypes(include=['number']).columns
+if len(numeric_cols) > 0:
+    print("Numeric columns:", list(numeric_cols))
+    print(df[numeric_cols].describe())
+else:
+    print("No numeric columns found")
+
+# For T-tests, ensure columns are numeric
+if 'age' in df.columns:
+    df['age'] = pd.to_numeric(df['age'], errors='coerce')
+    print(f"Age column type: {df['age'].dtype}")
+
+# For plotting, use grouped/aggregated data to avoid length mismatches
+import matplotlib.pyplot as plt
+if 'treatment_group' in df.columns and 'age' in df.columns:
+    # Correct: aggregate data first
+    age_by_treatment = df.groupby('treatment_group')['age'].mean()
+    plt.bar(age_by_treatment.index, age_by_treatment.values)
+    plt.title('Mean Age by Treatment Group')
+    plt.show()
+
+# Show data types
+print("\nData types:")
+print(df.dtypes)
+
+EXAMPLE WRONG CODE:
+# ❌ NEVER DO THIS - df is already provided
+df = pd.read_csv('file.csv')  # This will fail!
 
 Python Code:`
   }

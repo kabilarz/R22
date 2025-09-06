@@ -1,8 +1,24 @@
 # Nemo AI-Powered Medical Data Analysis Platform - User Guide
 
+**The First HIPAA-Compliant Desktop AI Statistical Platform for Medical Researchers**
+
 ## 🎯 Quick Start Guide for Medical Researchers
 
-**Nemo** is a comprehensive AI-powered desktop application designed specifically for medical researchers and healthcare professionals to analyze datasets using natural language queries and advanced statistical methods. Built with privacy-first principles for secure offline data analysis.
+**Nemo** is a comprehensive AI-powered desktop application designed exclusively for medical researchers to analyze datasets using natural language queries and advanced statistical methods. Built with privacy-first principles for secure offline data analysis, eliminating the need for cloud-based tools that violate HIPAA compliance.
+
+### **Why Medical Researchers Choose Nemo**
+
+**Current Workflow Problems:**
+- **SPSS/SAS**: Expensive ($5,000+/year), steep learning curve, no AI integration
+- **ChatGPT/Cloud AI**: HIPAA violations, no real statistical analysis, data privacy risks
+- **R/Python**: Requires programming skills, time-consuming setup, no medical focus
+
+**Nemo Solution:**
+- ✅ **HIPAA Compliant**: All data processing stays local on your machine
+- ✅ **AI Integrated**: Natural language queries with real statistical analysis
+- ✅ **Medical Focused**: 119 statistical tests designed for medical research
+- ✅ **No Coding Required**: Chat interface handles complex analyses
+- ✅ **Cost Effective**: Significantly cheaper than enterprise statistical software
 
 ---
 

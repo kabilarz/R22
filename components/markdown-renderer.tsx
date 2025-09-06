@@ -37,7 +37,7 @@ export function MarkdownRenderer({ content, onRunCode }: MarkdownRendererProps) 
   }
 
   return (
-    <div className="prose prose-sm max-w-none dark:prose-invert">
+    <div className="prose prose-sm max-w-none dark:prose-invert overflow-hidden w-full">
       <ReactMarkdown
         components={{
           code({ node, inline, className, children, ...props }: any) {
@@ -48,7 +48,7 @@ export function MarkdownRenderer({ content, onRunCode }: MarkdownRendererProps) 
             if (inline) {
               return (
                 <code 
-                  className="bg-muted px-1.5 py-0.5 rounded text-sm font-mono" 
+                  className="bg-muted px-1.5 py-0.5 rounded text-sm font-mono break-all max-w-full overflow-hidden" 
                   {...props}
                 >
                   {children}
@@ -57,7 +57,7 @@ export function MarkdownRenderer({ content, onRunCode }: MarkdownRendererProps) 
             }
 
             return (
-              <div className="relative my-4">
+              <div className="relative my-4 w-full max-w-full overflow-hidden">
                 <div className="absolute right-2 top-2 flex gap-1 z-10">
                   <Button
                     variant="ghost"
@@ -78,18 +78,26 @@ export function MarkdownRenderer({ content, onRunCode }: MarkdownRendererProps) 
                     </Button>
                   )}
                 </div>
-                {React.createElement(SyntaxHighlighter as any, {
-                  style: oneDark,
-                  language: language,
-                  PreTag: "div",
-                  customStyle: {
-                    margin: 0,
-                    borderRadius: '6px',
-                    fontSize: '13px',
-                    lineHeight: '1.4'
-                  },
-                  ...props
-                }, code)}
+                <div className="w-full max-w-full overflow-hidden">
+                  {React.createElement(SyntaxHighlighter as any, {
+                    style: oneDark,
+                    language: language,
+                    PreTag: "div",
+                    customStyle: {
+                      margin: 0,
+                      borderRadius: '6px',
+                      fontSize: '13px',
+                      lineHeight: '1.4',
+                      wordWrap: 'break-word',
+                      overflowWrap: 'break-word',
+                      whiteSpace: 'pre-wrap',
+                      wordBreak: 'break-all',
+                      maxWidth: '100%',
+                      overflow: 'hidden'
+                    },
+                    ...props
+                  }, code)}
+                </div>
               </div>
             )
           },

@@ -80,6 +80,15 @@ def init_store() -> None:
             )
         """)
         
+        # Create user_data table (active dataset)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS user_data (
+                id INTEGER PRIMARY KEY,
+                active_dataset_id TEXT,
+                activated_at TIMESTAMP DEFAULT now()
+            )
+        """)
+        
         print("Database initialized successfully")
         
     finally:
@@ -273,3 +282,82 @@ def query_dataset(dataset_id: str, query: str) -> pd.DataFrame:
         return result
     finally:
         conn.close()
+
+def activate_dataset(dataset_id: str) -> bool:
+    """Activate a dataset by setting it as the current user_data."""
+    conn = get_connection()
+    try:
+        # Check if dataset exists
+        dataset_info = conn.execute(
+            "SELECT dataset_id, path FROM datasets WHERE dataset_id = ?",
+            [dataset_id]
+        ).fetchone()
+        
+        if not dataset_info:
+            return False
+            
+        # Clear existing user_data
+        conn.execute("DELETE FROM user_data")
+        
+        # Insert new active dataset
+        conn.execute(
+            "INSERT INTO user_data (id, active_dataset_id) VALUES (1, ?)",
+            [dataset_id]
+        )
+        
+        # Create or replace the user_data view that AI will query
+        parquet_path = dataset_info[1]
+        conn.execute(f"CREATE OR REPLACE VIEW v_user_data AS SELECT * FROM '{parquet_path}'")
+        
+        print(f"✅ Dataset {dataset_id} activated as user_data")
+        return True
+        
+    except Exception as e:
+        print(f"❌ Failed to activate dataset {dataset_id}: {e}")
+        return False
+    finally:
+        conn.close()
+
+def get_active_dataset() -> Optional[str]:
+    """Get the currently active dataset ID."""
+    conn = get_connection()
+    try:
+        result = conn.execute(
+            "SELECT active_dataset_id FROM user_data ORDER BY activated_at DESC LIMIT 1"
+        ).fetchone()
+        
+        return result[0] if result else None
+    finally:
+        conn.close()
+
+def get_all_datasets_with_status() -> List[Dict[str, Any]]:
+    """Get all stored datasets with active status for tab display."""
+    conn = get_connection()
+    try:
+        result = conn.execute(
+            "SELECT dataset_id, name, n_rows, created_at FROM datasets ORDER BY created_at DESC"
+        ).fetchall()
+        
+        active_dataset_id = get_active_dataset()
+        
+        return [
+            {
+                'dataset_id': row[0],
+                'name': row[1],
+                'n_rows': row[2],
+                'created_at': row[3],
+                'is_active': row[0] == active_dataset_id
+            }
+            for row in result
+        ]
+    finally:
+        conn.close()
+
+def save_dataset_with_activation(df: pd.DataFrame, name: str, auto_activate: bool = True) -> str:
+    """Save dataset and optionally activate it immediately."""
+    dataset_id = save_dataset(df, name)
+    
+    if auto_activate:
+        activate_dataset(dataset_id)
+        
+    return dataset_id

@@ -256,6 +256,9 @@ export function PythonSandbox({ selectedFile }: PythonSandboxProps) {
     setOutput('')
 
     try {
+      // Show immediate feedback
+      toast.info('Executing Python code...')
+      
       const result = await apiClient.executePythonCode(
         code,
         selectedFile?.name || 'user_data',
@@ -263,15 +266,26 @@ export function PythonSandbox({ selectedFile }: PythonSandboxProps) {
       )
 
       if (result.success) {
-        setOutput(result.output || 'Code executed successfully (no output)')
-        toast.success('Code executed successfully!')
+        const outputText = result.output || 'Code executed successfully (no output)'
+        setOutput(outputText)
+        toast.success('✅ Code executed successfully!')
+        
+        // Log execution stats if available
+        if (result.execution_time) {
+          console.log(`Execution time: ${result.execution_time.toFixed(3)}s`)
+        }
+        if (result.memory_used_mb) {
+          console.log(`Memory used: ${result.memory_used_mb.toFixed(1)}MB`)
+        }
       } else {
-        setOutput(`Error: ${result.error || 'Unknown error occurred'}`)
-        toast.error('Code execution failed')
+        const errorText = `Error: ${result.error || 'Unknown error occurred'}`
+        setOutput(errorText)
+        toast.error('❌ Code execution failed')
       }
     } catch (error) {
-      setOutput(`Execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
-      toast.error('Failed to execute Python code')
+      const errorMessage = `Execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      setOutput(errorMessage)
+      toast.error('❌ Failed to execute Python code')
       console.error('Python execution error:', error)
     } finally {
       setIsExecuting(false)
@@ -349,9 +363,9 @@ export function PythonSandbox({ selectedFile }: PythonSandboxProps) {
       </CardHeader>
 
       <CardContent className="flex-1 flex flex-col overflow-hidden p-4">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-full">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-full overflow-hidden">
           {/* Code Editor */}
-          <div className="flex flex-col">
+          <div className="flex flex-col min-w-0">
             <h3 className="text-sm font-medium mb-2">Python Code</h3>
             <Textarea
               placeholder="Enter your Python code here... 
@@ -369,7 +383,7 @@ print(df.describe())
           </div>
 
           {/* Output */}
-          <div className="flex flex-col">
+          <div className="flex flex-col min-w-0">
             <h3 className="text-sm font-medium mb-2">Output</h3>
             <ScrollArea className="flex-1 border rounded-md p-3 bg-muted/50">
               {isExecuting ? (
@@ -378,7 +392,7 @@ print(df.describe())
                   Executing Python code...
                 </div>
               ) : (
-                <pre className="text-sm whitespace-pre-wrap font-mono">
+                <pre className="text-sm whitespace-pre-wrap font-mono break-words">
                   {output || 'No output yet. Run some code to see results here.'}
                 </pre>
               )}

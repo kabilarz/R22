@@ -1,0 +1,1 @@
+["correlation_pearson", "mann_whitney", "wilcoxon_signed_rank", "shapiro_wilk", "fisher_exact", "descriptive_stats", "anova_oneway", "independent_ttest", "chi_square", "paired_ttest"]

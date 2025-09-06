@@ -10,6 +10,7 @@ aiofiles==23.2.1
 matplotlib==3.8.2
 seaborn==0.13.0
 numpy==1.24.4
+psutil==5.9.6
 
 # Core Statistics Libraries - Phase 2A
 statsmodels==0.14.1

@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nemo Desktop Application Preview</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f0f0f0;
+            overflow: hidden;
+        }
+        .desktop-window {
+            width: 100vw;
+            height: 100vh;
+            background: white;
+            border: 1px solid #ccc;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            display: flex;
+            flex-direction: column;
+        }
+        .title-bar {
+            height: 32px;
+            background: linear-gradient(to bottom, #e8e8e8, #d0d0d0);
+            border-bottom: 1px solid #999;
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            font-size: 13px;
+            color: #333;
+        }
+        .window-controls {
+            margin-left: auto;
+            display: flex;
+            gap: 8px;
+        }
+        .control-btn {
+            width: 12px;
+            height: 12px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+        }
+        .close { background: #ff5f57; }
+        .minimize { background: #ffbd2e; }
+        .maximize { background: #28ca42; }
+        .menu-bar {
+            height: 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+            font-size: 14px;
+        }
+        .menu-item {
+            padding: 5px 12px;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+        .menu-item:hover {
+            background: #e9ecef;
+        }
+        .app-content {
+            flex: 1;
+            display: flex;
+            background: #fafbfc;
+        }
+        .sidebar {
+            width: 280px;
+            background: white;
+            border-right: 1px solid #e1e5e9;
+            display: flex;
+            flex-direction: column;
+        }
+        .sidebar-header {
+            padding: 16px;
+            border-bottom: 1px solid #e1e5e9;
+            background: #f8f9fa;
+        }
+        .sidebar-content {
+            flex: 1;
+            padding: 16px;
+        }
+        .main-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .chat-header {
+            padding: 16px;
+            border-bottom: 1px solid #e1e5e9;
+            background: white;
+            display: flex;
+            gap: 8px;
+        }
+        .action-btn {
+            padding: 6px 12px;
+            border: 1px solid #d0d7de;
+            background: white;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .action-btn:hover {
+            background: #f3f4f6;
+        }
+        .action-btn.primary {
+            background: #0969da;
+            color: white;
+            border-color: #0969da;
+        }
+        .chat-area {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .message {
+            margin-bottom: 20px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            max-width: 80%;
+        }
+        .message.user {
+            background: #e3f2fd;
+            margin-left: auto;
+            text-align: right;
+        }
+        .message.assistant {
+            background: #f5f5f5;
+        }
+        .python-output {
+            background: #0d1117;
+            color: #c9d1d9;
+            padding: 16px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            margin: 12px 0;
+            white-space: pre-wrap;
+        }
+        .file-item {
+            padding: 8px 12px;
+            border: 1px solid #d0d7de;
+            border-radius: 6px;
+            margin: 4px 0;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .file-item:hover {
+            background: #f6f8fa;
+        }
+        .setup-dialog {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            width: 400px;
+            z-index: 1000;
+            display: none;
+        }
+        .setup-dialog.show {
+            display: block;
+        }
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+            display: none;
+        }
+        .overlay.show {
+            display: block;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e1e5e9;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 12px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: #0969da;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+        .status-ready {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status-setup {
+            background: #fff3cd;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <!-- Desktop Window Frame -->
+    <div class="desktop-window">
+        <!-- Windows Title Bar -->
+        <div class="title-bar">
+            <span>🏥 Nemo Medical AI - Desktop Application</span>
+            <div class="window-controls">
+                <button class="control-btn minimize"></button>
+                <button class="control-btn maximize"></button>
+                <button class="control-btn close"></button>
+            </div>
+        </div>
+
+        <!-- Menu Bar -->
+        <div class="menu-bar">
+            <div class="menu-item">File</div>
+            <div class="menu-item">Edit</div>
+            <div class="menu-item">View</div>
+            <div class="menu-item">Tools</div>
+            <div class="menu-item">Help</div>
+            <div style="margin-left: auto; font-size: 12px; color: #666;">
+                <span class="status-badge status-ready">✅ Python Ready</span>
+            </div>
+        </div>
+
+        <!-- Main Application Content -->
+        <div class="app-content">
+            <!-- Left Sidebar - Data Panel -->
+            <div class="sidebar">
+                <div class="sidebar-header">
+                    <h3 style="margin: 0; font-size: 16px; color: #24292f;">📁 Data Files</h3>
+                    <p style="margin: 4px 0 0 0; font-size: 12px; color: #656d76;">Upload medical datasets</p>
+                </div>
+                <div class="sidebar-content">
+                    <div class="file-item">
+                        <div style="font-weight: 500;">📊 patient_data.csv</div>
+                        <div style="font-size: 11px; color: #656d76;">1,250 patients • 8 variables</div>
+                    </div>
+                    <div class="file-item">
+                        <div style="font-weight: 500;">📈 clinical_trial.xlsx</div>
+                        <div style="font-size: 11px; color: #656d76;">856 participants • 12 variables</div>
+                    </div>
+                    
+                    <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid #d0d7de;">
+                        <h4 style="margin: 0 0 8px 0; font-size: 13px; color: #24292f;">📊 Data Overview</h4>
+                        <div style="font-size: 12px; color: #656d76; line-height: 1.4;">
+                            <div>Rows: 1,250</div>
+                            <div>Variables: age, gender, systolic_bp, diastolic_bp, bmi, diagnosis</div>
+                            <div>Missing: 0.8% overall</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Chat/Analysis Area -->
+            <div class="main-area">
+                <!-- Quick Action Buttons -->
+                <div class="chat-header">
+                    <button class="action-btn">📊 Stats</button>
+                    <button class="action-btn">👥 T-Test</button>
+                    <button class="action-btn">🔗 Correlations</button>
+                    <button class="action-btn primary">🏥 Medical Analysis</button>
+                </div>
+
+                <!-- Chat Messages Area -->
+                <div class="chat-area">
+                    <div class="message assistant">
+                        <strong>🏥 Nemo Medical AI</strong><br>
+                        I can help you analyze the patient data from "patient_data.csv". This file contains 1,250 patients with 8 clinical variables. You can ask me questions like:
+                        <br><br>
+                        • "What are the main trends in blood pressure by age group?"<br>
+                        • "Compare BMI between male and female patients"<br>
+                        • "Show me hypertension prevalence statistics"
+                    </div>
+
+                    <div class="message user">
+                        Analyze blood pressure trends by age group and show me the clinical significance
+                    </div>
+
+                    <div class="message assistant">
+                        <strong>🩸 Blood Pressure Analysis by Age Group</strong><br><br>
+                        I'll analyze blood pressure patterns across age groups and provide clinical interpretation:
+
+                        <div class="python-output">🏥 MEDICAL BLOOD PRESSURE ANALYSIS
+========================================
+
+📊 Dataset: 1,250 patients analyzed
+
+👥 AGE GROUP DISTRIBUTION:
+  <30 years: 87 patients (7.0%)
+  30-50 years: 298 patients (23.8%)
+  50-65 years: 456 patients (36.5%)
+  65+ years: 409 patients (32.7%)
+
+🩸 SYSTOLIC BLOOD PRESSURE BY AGE:
+  <30:     Mean: 118.3 mmHg (Normal range)
+  30-50:   Mean: 125.7 mmHg (Elevated-normal)
+  50-65:   Mean: 138.2 mmHg (Stage 1 HTN)
+  65+:     Mean: 145.8 mmHg (Stage 1 HTN)
+
+📈 HYPERTENSION PREVALENCE:
+  <30:     5.7% (5/87 patients)
+  30-50:   18.1% (54/298 patients)
+  50-65:   42.3% (193/456 patients)
+  65+:     58.9% (241/409 patients)
+
+🧪 STATISTICAL SIGNIFICANCE:
+  F-statistic: 89.4 (p < 0.001)
+  Post-hoc: All age groups significantly different
+
+🏥 CLINICAL INTERPRETATION:
+• Clear age-related BP progression (p<0.001)
+• 65+ group shows highest HTN prevalence (58.9%)
+• Early intervention recommended for 50+ group
+• Consider lifestyle modifications for 30-50 group
+
+✅ Analysis complete! Results ready for clinical review.</div>
+
+                        **Key Clinical Findings:**
+                        <br>• **Progressive increase** in BP with age (highly significant, p<0.001)
+                        <br>• **Critical threshold** at 50+ years where HTN prevalence doubles
+                        <br>• **Elderly patients** (65+) show 58.9% hypertension prevalence
+                        <br>• **Younger adults** (<30) maintain predominantly normal BP
+                        
+                        <br><br>**Clinical Recommendations:**
+                        <br>• Intensify screening protocols for patients 50+
+                        <br>• Implement preventive measures for 30-50 age group
+                        <br>• Consider earlier intervention thresholds for elderly patients
+
+                        <br><br><em>Execution time: 2.1s | Memory: 67MB</em>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Python Setup Dialog (Hidden by default) -->
+    <div class="overlay" id="overlay"></div>
+    <div class="setup-dialog" id="setupDialog">
+        <h3 style="margin: 0 0 16px 0;">🐍 Python Setup for Medical Analysis</h3>
+        
+        <div style="padding: 12px; background: #fff3cd; border-radius: 6px; border: 1px solid #ffeeba; margin-bottom: 16px;">
+            ⚠️ Python not detected - automatic setup required
+        </div>
+
+        <p><strong>What will be installed:</strong></p>
+        <ul style="font-size: 14px; line-height: 1.5;">
+            <li>Python 3.11.7 embedded runtime</li>
+            <li>Medical analysis libraries (pandas, numpy, scipy)</li>
+            <li>Statistical computing packages</li>
+            <li>Data visualization tools</li>
+        </ul>
+
+        <p style="font-size: 12px; color: #666;">Size: ~150MB | No internet required after installation</p>
+
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+
+        <div id="statusText" style="font-size: 13px; color: #666; margin-bottom: 16px;">
+            Ready to install Python environment...
+        </div>
+
+        <div style="display: flex; gap: 8px;">
+            <button onclick="startSetup()" id="setupBtn" style="flex: 1; padding: 8px 16px; background: #0969da; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                🔽 Setup Python for Medical Analysis
+            </button>
+            <button onclick="skipSetup()" style="padding: 8px 16px; background: #f6f8fa; border: 1px solid #d0d7de; border-radius: 6px; cursor: pointer;">
+                Skip for Now
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Show setup dialog on load
+        function showSetupDialog() {
+            document.getElementById('overlay').classList.add('show');
+            document.getElementById('setupDialog').classList.add('show');
+        }
+
+        function hideSetupDialog() {
+            document.getElementById('overlay').classList.remove('show');
+            document.getElementById('setupDialog').classList.remove('show');
+        }
+
+        function startSetup() {
+            const progressFill = document.getElementById('progressFill');
+            const statusText = document.getElementById('statusText');
+            const setupBtn = document.getElementById('setupBtn');
+            
+            setupBtn.disabled = true;
+            setupBtn.textContent = '🔄 Installing...';
+            
+            const steps = [
+                { progress: 10, text: 'Downloading Python 3.11.7 embedded...' },
+                { progress: 30, text: 'Extracting Python runtime...' },
+                { progress: 50, text: 'Configuring Python environment...' },
+                { progress: 60, text: 'Installing package manager...' },
+                { progress: 80, text: 'Installing medical analysis libraries...' },
+                { progress: 95, text: 'Verifying installation...' },
+                { progress: 100, text: 'Medical Python environment ready!' }
+            ];
+            
+            let currentStep = 0;
+            
+            function updateProgress() {
+                if (currentStep < steps.length) {
+                    const step = steps[currentStep];
+                    progressFill.style.width = step.progress + '%';
+                    statusText.textContent = step.text;
+                    currentStep++;
+                    
+                    if (currentStep < steps.length) {
+                        setTimeout(updateProgress, 1500);
+                    } else {
+                        setTimeout(() => {
+                            setupBtn.textContent = '✅ Setup Complete';
+                            setupBtn.style.background = '#28a745';
+                            setTimeout(hideSetupDialog, 2000);
+                        }, 1000);
+                    }
+                }
+            }
+            
+            updateProgress();
+        }
+
+        function skipSetup() {
+            hideSetupDialog();
+        }
+
+        // Auto-show setup dialog after 2 seconds for demo
+        setTimeout(showSetupDialog, 2000);
+    </script>
+</body>
+</html>

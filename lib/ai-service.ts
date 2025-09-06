@@ -6,12 +6,20 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { ollamaClient } from './ollama-client'
 import { memoryOptimizer } from './memory-optimizer'
+import { testSuggestionEngine, TestSuggestion, SuggestionQuery } from './test-suggestion-engine'
 
 export type ModelType = 'local' | 'cloud'
 
 export interface AIMessage {
   role: 'user' | 'assistant'
   content: string
+}
+
+export interface AnalysisResponse {
+  type: 'suggestions' | 'code'
+  suggestions?: TestSuggestion[]
+  code?: string
+  explanation?: string
 }
 
 export class AIService {
@@ -58,7 +66,70 @@ export class AIService {
   }
 
   /**
-   * Generate analysis using the selected model with memory optimization
+   * Generate analysis suggestions or code based on query
+   */
+  async generateAnalysisResponse(modelName: string, query: string, dataContext: string, selectedFile?: any): Promise<AnalysisResponse> {
+    // First, try to suggest appropriate statistical tests
+    if (selectedFile && this.shouldSuggestTests(query)) {
+      try {
+        const suggestionQuery: SuggestionQuery = {
+          query: query,
+          dataContext: {
+            columns: selectedFile.data.length > 0 ? Object.keys(selectedFile.data[0]) : [],
+            sampleData: selectedFile.data.slice(0, 5),
+            rowCount: selectedFile.data.length
+          }
+        }
+        
+        const suggestions = await testSuggestionEngine.suggestTests(suggestionQuery)
+        
+        if (suggestions.length > 0) {
+          return {
+            type: 'suggestions',
+            suggestions: suggestions.slice(0, 3), // Show top 3 suggestions
+            explanation: `I found ${suggestions.length} statistical tests that might help with your analysis. Please select the one that best fits your research question.`
+          }
+        }
+      } catch (error) {
+        console.warn('Test suggestion failed, falling back to code generation:', error)
+      }
+    }
+    
+    // Fallback to direct code generation
+    const code = await this.generateAnalysisCode(modelName, query, dataContext)
+    return {
+      type: 'code',
+      code: code,
+      explanation: 'Here\'s the analysis code for your query:'
+    }
+  }
+
+  /**
+   * Generate specific code for a selected test
+   */
+  async generateTestCode(selectedTest: TestSuggestion, modelName: string, query: string, dataContext: string): Promise<string> {
+    // Use the pre-generated template with some AI enhancement
+    const baseCode = selectedTest.codeTemplate + '\n\n' + selectedTest.visualizationCode
+    
+    // Optional: enhance with AI if needed
+    const enhancementPrompt = `Enhance this statistical analysis code for the query "${query}":\n\n${baseCode}\n\nMake it more specific to the user's request while keeping the core analysis intact.`
+    
+    try {
+      const modelType = this.getModelType(modelName)
+      if (modelType === 'local') {
+        return await this.generateWithLocalModel(modelName, enhancementPrompt, dataContext)
+      } else {
+        return await this.generateWithGemini(enhancementPrompt, dataContext)
+      }
+    } catch (error) {
+      // Fallback to template if AI enhancement fails
+      console.warn('AI enhancement failed, using template:', error)
+      return baseCode
+    }
+  }
+
+  /**
+   * Legacy method for backward compatibility
    */
   async generateAnalysisCode(modelName: string, query: string, dataContext: string): Promise<string> {
     const modelType = this.getModelType(modelName)
@@ -122,6 +193,8 @@ export class AIService {
   private buildAnalysisPrompt(userQuery: string, dataContext: string): string {
     return `You are a medical data analysis assistant. Generate Python pandas code to analyze the given dataset.
 
+IMPORTANT: The DataFrame 'df' is already loaded from DuckDB - DO NOT use pd.read_csv() or any file reading commands!
+
 Dataset Context:
 ${dataContext}
 
@@ -132,13 +205,51 @@ Please provide:
 2. Brief explanation of the analysis
 3. Any important medical insights
 
-Requirements:
-- Use 'df' as the DataFrame variable name
+CRITICAL REQUIREMENTS:
+- The variable 'df' is already available - DO NOT read files with pd.read_csv()
+- Use 'pd' for pandas operations (pd.DataFrame, etc.) - 'pandas' and 'pd' are both imported
+- Start directly with data analysis using 'df'
 - Include error handling
 - Provide clear variable names
 - Add comments explaining medical significance
 - Use appropriate statistical methods
 - Include visualizations when relevant
+- For plots: ensure data length matches - use df.groupby() for summary data
+- Avoid length mismatches in plotting by using aggregated data
+
+EXAMPLE CORRECT CODE:
+# df is already loaded - just use it!
+print("Dataset shape:", df.shape)
+
+# Always check for numeric columns first
+numeric_cols = df.select_dtypes(include=['number']).columns
+if len(numeric_cols) > 0:
+    print("Numeric columns:", list(numeric_cols))
+    print(df[numeric_cols].describe())
+else:
+    print("No numeric columns found")
+
+# For T-tests, ensure columns are numeric
+if 'age' in df.columns:
+    df['age'] = pd.to_numeric(df['age'], errors='coerce')
+    print(f"Age column type: {df['age'].dtype}")
+
+# For plotting, use grouped/aggregated data to avoid length mismatches
+import matplotlib.pyplot as plt
+if 'treatment_group' in df.columns and 'age' in df.columns:
+    # Correct: aggregate data first
+    age_by_treatment = df.groupby('treatment_group')['age'].mean()
+    plt.bar(age_by_treatment.index, age_by_treatment.values)
+    plt.title('Mean Age by Treatment Group')
+    plt.show()
+
+# Show data types
+print("\nData types:")
+print(df.dtypes)
+
+EXAMPLE WRONG CODE:
+# ❌ NEVER DO THIS - df is already provided
+df = pd.read_csv('file.csv')  # This will fail!
 
 Python Code:`
   }
@@ -296,6 +407,22 @@ Python Code:`
     
     // Default to low complexity
     return 'low'
+  }
+
+  /**
+   * Determine if query should trigger test suggestions
+   */
+  private shouldSuggestTests(query: string): boolean {
+    const lowerQuery = query.toLowerCase()
+    const suggestionTriggers = [
+      'compare', 'vs', 'versus', 'between', 'difference',
+      'relationship', 'correlation', 'associated', 'related',
+      'analyze', 'analysis', 'test', 'statistical',
+      'vaccinated', 'unvaccinated', 'treatment', 'control',
+      'male', 'female', 'gender', 'group'
+    ]
+    
+    return suggestionTriggers.some(trigger => lowerQuery.includes(trigger))
   }
 }
 

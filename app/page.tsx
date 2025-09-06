@@ -5,7 +5,12 @@ import { DataPanel } from '@/components/data-panel'
 import { ChatPanel } from '@/components/chat-panel'
 import { SPSSDataView } from '@/components/spss-data-view'
 import { BackendStatus } from '@/components/backend-status'
+import { MenuBar } from '@/components/menu-bar'
+import { PluginManager } from '@/components/plugin-manager'
+import { AboutDialog } from '@/components/about-dialog'
+import { PythonSetupDialog } from '@/components/python-setup-dialog'
 import { apiClient } from '@/lib/api'
+import { initializePython, isTauriApp, PythonStatus } from '@/lib/python-setup'
 import { toast } from 'sonner'
 
 interface UploadedFile {
@@ -25,35 +30,66 @@ export default function Home() {
   const [showDataView, setShowDataView] = useState<UploadedFile | null>(null)
   const [currentChatId, setCurrentChatId] = useState<string>('')
   const [isBackendReady, setIsBackendReady] = useState(false)
+  const [showPluginManager, setShowPluginManager] = useState(false)
+  const [showAboutDialog, setShowAboutDialog] = useState(false)
+  const [pythonStatus, setPythonStatus] = useState<PythonStatus | null>(null)
+  const [showPythonSetup, setShowPythonSetup] = useState(false)
+  const [isPythonReady, setIsPythonReady] = useState(false)
+  const [isInitializing, setIsInitializing] = useState(true)
 
-  // Initialize backend on component mount
+  // Initialize Python and backend on component mount
   useEffect(() => {
-    const initializeBackend = async () => {
+    const initializeApp = async () => {
       try {
-        // Check if backend is healthy
-        await apiClient.healthCheck()
+        // Step 1: Initialize Python if in Tauri app
+        if (isTauriApp()) {
+          console.log('🚀 Initializing Python for medical analysis...')
+          const pythonResult = await initializePython((progress) => {
+            console.log(`Python setup: ${progress.step} - ${progress.message} (${progress.progress}%)`)
+          })
+          
+          if (pythonResult) {
+            setPythonStatus(pythonResult)
+            setIsPythonReady(pythonResult.is_available && pythonResult.medical_libraries_available)
+            
+            if (!pythonResult.is_available || !pythonResult.medical_libraries_available) {
+              setShowPythonSetup(true)
+              setIsInitializing(false)
+              return // Wait for user to complete Python setup
+            }
+          } else {
+            // Web mode or Python setup not available
+            setIsPythonReady(true)
+          }
+        } else {
+          // Web mode
+          setIsPythonReady(true)
+        }
         
-        // Initialize database
+        // Step 2: Initialize backend
+        console.log('🔗 Initializing backend...')
+        await apiClient.healthCheck()
         await apiClient.initializeDatabase()
         
-        // Create a default chat session
         const chatResponse = await apiClient.createChat('Analysis Session')
         setCurrentChatId(chatResponse.chat_id)
         
         setIsBackendReady(true)
-        toast.success('Backend initialized successfully')
+        setIsInitializing(false)
+        
+        const mode = isTauriApp() ? 'Desktop' : 'Web'
+        toast.success(`${mode} application initialized successfully`)
+        
       } catch (error) {
-        console.error('Failed to initialize backend:', error)
-        // Don't show error toast here - BackendStatus component will handle it
+        console.error('Failed to initialize application:', error)
         setIsBackendReady(false)
+        setIsInitializing(false)
+        // BackendStatus component will handle backend error display
       }
     }
 
-    // Only try to initialize if backend is ready
-    if (isBackendReady) {
-      initializeBackend()
-    }
-  }, [isBackendReady])
+    initializeApp()
+  }, [])
 
   const handleDataViewSave = async (updatedData: any[], variables: any) => {
     if (showDataView && showDataView.dataset_id) {
@@ -85,32 +121,71 @@ export default function Home() {
     }
   }
 
-  // Full-screen SPSS Data View (keep borderless)
-  if (showDataView) {
+  const handlePythonSetupComplete = (status: PythonStatus | null) => {
+    setPythonStatus(status)
+    setShowPythonSetup(false)
+    setIsPythonReady(true)
+    setIsInitializing(false)
+    
+    if (status?.is_available) {
+      toast.success('🐍 Python ready for medical analysis!')
+    }
+  }
+
+  const handlePythonSetupSkip = () => {
+    setShowPythonSetup(false)
+    setIsPythonReady(false) // Python not ready but user chose to skip
+    setIsInitializing(false)
+    toast.warning('Python setup skipped - some analysis features may be limited')
+  }
+
+  // Show Python setup dialog if needed
+  if (showPythonSetup) {
     return (
-      <div className="h-screen w-screen overflow-hidden bg-background">
-        <SPSSDataView
-          file={showDataView}
-          onClose={() => setShowDataView(null)}
-          onSave={handleDataViewSave}
+      <div className="h-screen w-screen bg-muted/20 flex items-center justify-center">
+        <PythonSetupDialog 
+          onComplete={handlePythonSetupComplete}
+          onSkip={handlePythonSetupSkip}
+          autoStart={true}
         />
       </div>
     )
   }
 
+  // Show loading screen during initialization
+  if (isInitializing) {
+    return (
+      <div className="h-screen w-screen bg-muted/20 flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="text-2xl font-semibold">🏥 Nemo Medical AI</div>
+          <div className="text-muted-foreground">Initializing medical analysis environment...</div>
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+        </div>
+      </div>
+    )
+  }
+
+  // Full-screen SPSS Data View (keep borderless)
+  if (showDataView) {
+    return (
+      <SPSSDataView 
+        file={showDataView} 
+        onSave={handleDataViewSave}
+        onClose={() => setShowDataView(null)}
+      />
+    )
+  }
+
   return (
-    <div className="h-screen w-screen bg-muted/20 p-4">
-      {/* Backend Status Component */}
-      <BackendStatus onStatusChange={setIsBackendReady} />
+    <div className="h-screen flex flex-col overflow-hidden">
+      <MenuBar 
+        onPluginManagerOpen={() => setShowPluginManager(true)}
+        onAboutOpen={() => setShowAboutDialog(true)}
+      />
       
-      {/* Outer bordered shell */}
-      <div className="h-full w-full flex bg-background border border-gray-200 rounded-2xl shadow-sm">
-        {/* Left Panel */}
-        <div
-          className={`h-full flex flex-col transition-all duration-300 border-r border-border 
-                      box-border pr-3 ${isPanelCollapsed ? 'w-12' : 'w-[300px]'}`}
-        >
-          <DataPanel
+      <div className="flex-1 flex overflow-hidden min-h-0">
+        <div className={`transition-all duration-300 ${isPanelCollapsed ? 'w-12' : 'w-80'} border-r flex-shrink-0`}>
+          <DataPanel 
             uploadedFiles={uploadedFiles}
             setUploadedFiles={setUploadedFiles}
             selectedFile={selectedFile}
@@ -122,16 +197,25 @@ export default function Home() {
             isBackendReady={isBackendReady}
           />
         </div>
-
-        {/* Right Panel */}
-        <div className="flex-1 min-h-0 overflow-hidden">
+        
+        <div className="flex-1 min-w-0 overflow-hidden">
           <ChatPanel 
-            selectedFile={selectedFile} 
+            selectedFile={selectedFile}
             currentChatId={currentChatId}
             isBackendReady={isBackendReady}
           />
         </div>
       </div>
+      
+      <BackendStatus onStatusChange={setIsBackendReady} />
+      
+      {showPluginManager && (
+        <PluginManager open={showPluginManager} onOpenChange={setShowPluginManager} />
+      )}
+      
+      {showAboutDialog && (
+        <AboutDialog open={showAboutDialog} onOpenChange={setShowAboutDialog} />
+      )}
     </div>
   )
 }

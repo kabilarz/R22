@@ -1,8 +1,38 @@
 # Nemo Desktop Application - Production Deployment Guide
 
-## 🚀 Overview
+**The First HIPAA-Compliant AI Medical Analysis Platform**
 
-This guide provides comprehensive instructions for deploying Nemo as a desktop application on Windows with bundled dependencies including Ollama for local AI processing and Python for data analysis.
+## 🎯 **Strategic Overview**
+
+**Target Market**: Medical researchers at academic institutions and pharmaceutical companies
+**Value Proposition**: First desktop AI platform combining statistical analysis with HIPAA compliance
+**Competitive Advantage**: No cloud dependencies, integrated AI + medical statistics, natural language interface
+
+---
+
+## 🚀 **Simplified Deployment Process**
+
+### **NEW: Single-Command Deployment**
+
+We've streamlined deployment from 25+ scripts to **ONE master deployment script**:
+
+```bash
+# Run the master deployment script
+deploy-nemo.bat
+```
+
+**What this accomplishes:**
+1. ✅ **Prerequisites Check**: Verifies Node.js and Python 3.8-3.11 installation
+2. ✅ **Dependency Installation**: Installs all Node.js and Python dependencies
+3. ✅ **Frontend Build**: Builds the React/Next.js application
+4. ✅ **Desktop Build**: Creates the Tauri desktop application
+5. ✅ **Output Generation**: Creates both installer and portable executable
+
+**Build Outputs:**
+- **Desktop Installer**: `src-tauri/target/release/bundle/nsis/nemo_1.0.0_x64-setup.exe`
+- **Portable Executable**: `src-tauri/target/release/nemo.exe`
+
+---
 
 ## 📋 System Requirements
 

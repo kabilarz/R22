@@ -7,10 +7,12 @@ import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { AlertCircle, Download, CheckCircle, Cpu, HardDrive, Monitor, Zap, Info } from 'lucide-react'
+import { AlertCircle, Download, CheckCircle, Cpu, HardDrive, Monitor, Zap, Info, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
 import { ollamaClient, HardwareInfo, ModelInfo } from '@/lib/ollama-client'
 import { GeminiConfig } from '@/components/gemini-config'
+import { ManualModelDownload } from '@/components/manual-model-download'
+import { OllamaDiagnostic } from '@/components/ollama-diagnostic'
 
 interface ModelSelectorProps {
   selectedModel: string
@@ -172,8 +174,7 @@ export function ModelSelector({ selectedModel, onModelChange, onModelReady }: Mo
         
         if (status) {
           toast.success('Ollama started successfully!')
-          const models = await ollamaClient.listInstalledModels()
-          setInstalledModels(models)
+          await refreshModels()
           
           // Refresh hardware info after starting Ollama
           try {
@@ -183,7 +184,7 @@ export function ModelSelector({ selectedModel, onModelChange, onModelReady }: Mo
             console.warn('Failed to refresh hardware info after Ollama start:', error)
           }
           
-          onModelReady(models.length > 0 || true) // Cloud models are still available
+          onModelReady(true) // Both local and cloud options available
         } else {
           toast.error('Failed to start Ollama. Please install Ollama first.')
         }
@@ -195,6 +196,19 @@ export function ModelSelector({ selectedModel, onModelChange, onModelReady }: Mo
     }
   }
 
+  const refreshModels = async () => {
+    try {
+      const models = await ollamaClient.listInstalledModels()
+      setInstalledModels(models)
+      console.log('Installed models refreshed:', models)
+      return models
+    } catch (error) {
+      console.error('Failed to refresh models:', error)
+      toast.error('Failed to refresh models list')
+      return []
+    }
+  }
+
   const handleDownloadModel = async (modelName: string) => {
     try {
       setIsDownloading(modelName)
@@ -202,28 +216,62 @@ export function ModelSelector({ selectedModel, onModelChange, onModelReady }: Mo
       
       toast.info(`Downloading ${modelName}... This may take several minutes.`)
       
+      // Check if Ollama is running first
+      const isRunning = await ollamaClient.checkStatus()
+      if (!isRunning) {
+        toast.error('Ollama service is not running. Please start Ollama first.')
+        return
+      }
+      
       // Simulate progress (real progress would require streaming)
       const progressInterval = setInterval(() => {
-        setDownloadProgress(prev => Math.min(prev + 5, 90))
-      }, 2000)
+        setDownloadProgress(prev => Math.min(prev + 3, 85))
+      }, 3000)
       
-      await ollamaClient.downloadModel(modelName)
+      // Attempt download
+      const result = await ollamaClient.downloadModel(modelName)
+      console.log('Download result:', result)
       
       clearInterval(progressInterval)
       setDownloadProgress(100)
       
-      // Update installed models
-      const models = await ollamaClient.listInstalledModels()
-      setInstalledModels(models)
-      
-      toast.success(`${modelName} downloaded successfully!`)
-      
-      // Auto-select the downloaded model
-      onModelChange(modelName)
-      onModelReady(true)
+      // Give a moment for the model to be registered
+      setTimeout(async () => {
+        try {
+          // Update installed models
+          const models = await ollamaClient.listInstalledModels()
+          setInstalledModels(models)
+          
+          const isInstalled = models.some(m => m.includes(modelName.split(':')[0]))
+          
+          if (isInstalled) {
+            toast.success(`✅ ${modelName} downloaded successfully!`)
+            
+            // Auto-select the downloaded model
+            onModelChange(modelName)
+            onModelReady(true)
+          } else {
+            toast.warning(`Download completed but ${modelName} may need a moment to appear. Try refreshing.`)
+          }
+        } catch (refreshError) {
+          console.error('Failed to refresh models list:', refreshError)
+          toast.warning('Download may have succeeded. Please refresh to see new models.')
+        }
+      }, 2000)
       
     } catch (error) {
-      toast.error(`Failed to download ${modelName}: ${error}`)
+      console.error('Download error:', error)
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      
+      if (errorMessage.includes('not running')) {
+        toast.error('❌ Ollama service is not running. Please start Ollama first.')
+      } else if (errorMessage.includes('timeout')) {
+        toast.error('❌ Download timed out. Large models may take longer. Please try again.')
+      } else if (errorMessage.includes('network')) {
+        toast.error('❌ Network error. Please check your internet connection.')
+      } else {
+        toast.error(`❌ Failed to download ${modelName}: ${errorMessage}`)
+      }
     } finally {
       setIsDownloading(null)
       setDownloadProgress(0)
@@ -251,10 +299,10 @@ export function ModelSelector({ selectedModel, onModelChange, onModelReady }: Mo
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2 min-w-0 flex-1">
       {/* Model Selection */}
       <Select value={selectedModel} onValueChange={onModelChange}>
-        <SelectTrigger className="w-64">
+        <SelectTrigger className="w-full max-w-64 min-w-40">
           <SelectValue placeholder="Select AI model" />
         </SelectTrigger>
         <SelectContent>
@@ -289,22 +337,19 @@ export function ModelSelector({ selectedModel, onModelChange, onModelReady }: Mo
         </SelectContent>
       </Select>
 
-      {/* Setup Button for Local Models */}
-      <Button variant="outline" size="sm" onClick={() => setIsSetupOpen(true)} className="flex items-center gap-2">
+      {/* Setup Button for Local Models - More compact */}
+      <Button variant="outline" size="sm" onClick={() => setIsSetupOpen(true)} className="flex items-center gap-1 flex-shrink-0">
         <Info className="h-4 w-4" />
-        Setup Local AI
+        <span className="hidden sm:inline">Setup</span>
       </Button>
 
-      {/* Gemini API Configuration */}
-      <GeminiConfig />
+      {/* Gemini API Configuration - Make compact */}
+      <div className="flex-shrink-0">
+        <GeminiConfig />
+      </div>
 
       {/* Setup Dialog */}
       <Dialog open={isSetupOpen} onOpenChange={setIsSetupOpen}>
-        <DialogTrigger asChild>
-          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-            <Info className="h-4 w-4" />
-          </Button>
-        </DialogTrigger>
         <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>AI Model Setup</DialogTitle>
@@ -379,7 +424,18 @@ export function ModelSelector({ selectedModel, onModelChange, onModelReady }: Mo
             {/* Model Selection */}
             {isOllamaRunning && (
               <div className="space-y-4">
-                <h4 className="text-sm font-medium">Available Models</h4>
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-medium">Available Models</h4>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={refreshModels}
+                    className="flex items-center gap-1"
+                  >
+                    <RefreshCw className="h-3 w-3" />
+                    Refresh
+                  </Button>
+                </div>
                 {modelRecommendations.map((model) => {
                   const status = getModelStatus(model.name)
                   const canRun = canRunModel(model)
@@ -444,6 +500,21 @@ export function ModelSelector({ selectedModel, onModelChange, onModelReady }: Mo
                 })}
               </div>
             )}
+            
+            {/* Manual Download Option */}
+            <div className="flex gap-2 pt-4 border-t">
+              <ManualModelDownload onModelDownloaded={refreshModels} />
+              <OllamaDiagnostic />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => window.open('https://ollama.com', '_blank')}
+                className="flex items-center gap-1"
+              >
+                <Info className="h-3 w-3" />
+                Ollama Docs
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

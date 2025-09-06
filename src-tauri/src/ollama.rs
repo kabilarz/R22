@@ -199,39 +199,96 @@ pub async fn start_ollama(app_handle: AppHandle) -> Result<String, String> {
 }
 
 #[command]
-pub async fn download_model(model_name: String, app_handle: AppHandle) -> Result<String, String> {
-    log::info!("Starting download for model: {}", model_name);
+pub async fn download_model(model_name: String, _app_handle: AppHandle) -> Result<String, String> {
+    log::info!("🔄 [Rust] Starting download for model: {}", model_name);
     
-    // Try bundled Ollama first, then system Ollama
-    let ollama_commands = vec![
-        get_bundled_ollama_path(&app_handle),
-        Ok(PathBuf::from("ollama")),
-    ];
-
-    for ollama_path in ollama_commands {
-        if let Ok(path) = ollama_path {
-            let result = Command::new(&path)
-                .arg("pull")
-                .arg(&model_name)
-                .output();
-
-            match result {
-                Ok(output) => {
-                    if output.status.success() {
-                        return Ok(format!("Model {} downloaded successfully", model_name));
-                    } else {
-                        let error = String::from_utf8_lossy(&output.stderr);
-                        log::warn!("Download failed with {:?}: {}", path, error);
-                    }
-                },
-                Err(e) => {
-                    log::warn!("Failed to execute ollama pull with {:?}: {}", path, e);
-                }
-            }
-        }
+    // Check if Ollama service is running first
+    log::info!("🔍 [Rust] Checking Ollama service status...");
+    let ollama_status = check_ollama_status().await.unwrap_or(false);
+    log::info!("📊 [Rust] Ollama status: {}", ollama_status);
+    
+    if !ollama_status {
+        let error_msg = "Ollama service is not running. Please start Ollama first.";
+        log::error!("❌ [Rust] {}", error_msg);
+        return Err(error_msg.to_string());
     }
     
-    Err(format!("Failed to download model {}. Please ensure Ollama is running.", model_name))
+    // Use Ollama API for downloading (more reliable than CLI)
+    let client = reqwest::Client::new();
+    
+    let request_body = json!({
+        "name": model_name
+    });
+    
+    let api_url = format!("{}/api/pull", OLLAMA_BASE_URL);
+    log::info!("🚀 [Rust] Sending pull request to: {}", api_url);
+    log::info!("📦 [Rust] Request body: {:?}", request_body);
+    
+    match timeout(
+        Duration::from_secs(300), // 5 minutes timeout for download
+        client.post(&api_url)
+            .json(&request_body)
+            .send()
+    ).await {
+        Ok(Ok(response)) => {
+            let status_code = response.status();
+            log::info!("📊 [Rust] Response status: {}", status_code);
+            
+            if response.status().is_success() {
+                // For streaming responses, we need to read the entire response
+                match response.text().await {
+                    Ok(response_text) => {
+                        log::info!("📝 [Rust] Response text: {}", response_text);
+                        
+                        // Wait a moment for the model to be registered
+                        tokio::time::sleep(Duration::from_secs(2)).await;
+                        
+                        // Verify the model was downloaded by checking the models list
+                        match list_installed_models().await {
+                            Ok(models) => {
+                                let model_found = models.iter().any(|m| m.contains(&model_name.split(':').next().unwrap_or(&model_name)));
+                                if model_found {
+                                    let success_msg = format!("✅ Model {} downloaded and verified successfully", model_name);
+                                    log::info!("{}", success_msg);
+                                    Ok(success_msg)
+                                } else {
+                                    let warning_msg = format!("⚠️ Model {} download completed but not yet visible in models list. It may need a moment to register.", model_name);
+                                    log::warn!("{}", warning_msg);
+                                    Ok(warning_msg)
+                                }
+                            },
+                            Err(_) => {
+                                let success_msg = format!("✅ Model {} download completed", model_name);
+                                log::info!("{}", success_msg);
+                                Ok(success_msg)
+                            }
+                        }
+                    },
+                    Err(e) => {
+                        let error_msg = format!("❌ Failed to read download response for {}: {}", model_name, e);
+                        log::error!("{}", error_msg);
+                        Err(error_msg)
+                    }
+                }
+            } else {
+                let status = response.status();
+                let error_text = response.text().await.unwrap_or_default();
+                let error_msg = format!("❌ Ollama API error {}: {}", status, error_text);
+                log::error!("{}", error_msg);
+                Err(error_msg)
+            }
+        },
+        Ok(Err(e)) => {
+            let error_msg = format!("❌ Network error while downloading {}: {}", model_name, e);
+            log::error!("{}", error_msg);
+            Err(error_msg)
+        },
+        Err(_) => {
+            let error_msg = format!("❌ Download timeout for model {} (5 minutes)", model_name);
+            log::error!("{}", error_msg);
+            Err(error_msg)
+        }
+    }
 }
 
 #[command]

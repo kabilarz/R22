@@ -289,6 +289,8 @@ export class APIClient {
     output: string;
     error?: string;
     success: boolean;
+    execution_time?: number;
+    memory_used_mb?: number;
   }> {
     const response = await fetch(`${this.baseUrl}/execute-python`, {
       method: 'POST',

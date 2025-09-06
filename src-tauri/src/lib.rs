@@ -1,4 +1,5 @@
 mod ollama;
+mod python_manager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -14,7 +15,10 @@ pub fn run() {
       ollama::query_ollama,
       ollama::list_installed_models,
       ollama::get_model_recommendations,
-      ollama::setup_bundled_ollama
+      ollama::setup_bundled_ollama,
+      python_manager::check_python_status,
+      python_manager::setup_embedded_python,
+      python_manager::get_python_path
     ])
     .setup(|app| {
       if cfg!(debug_assertions) {

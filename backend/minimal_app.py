@@ -300,7 +300,7 @@ import io
 from contextlib import redirect_stdout, redirect_stderr
 
 # Load the dataset
-with open('{temp_file_path}', 'r') as f:
+with open(r'{temp_file_path}', 'r') as f:
     data = json.load(f)
 
 df = pd.DataFrame(data)

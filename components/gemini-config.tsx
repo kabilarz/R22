@@ -142,11 +142,11 @@ export function GeminiConfig({ className }: GeminiConfigProps) {
   }
 
   return (
-    <div className={`flex items-center gap-2 ${className}`}>
+    <div className={`flex items-center gap-1 ${className}`}>
       {/* Connection Status Indicator */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1">
         <div className={`w-2 h-2 rounded-full ${getStatusColor()}`} />
-        <span className="text-sm text-muted-foreground">
+        <span className="text-sm text-muted-foreground hidden sm:inline">
           Gemini: {getStatusText()}
         </span>
       </div>
