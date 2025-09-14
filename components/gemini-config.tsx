@@ -143,15 +143,15 @@ export function GeminiConfig({ className }: GeminiConfigProps) {
 
   return (
     <div className={`flex items-center gap-1 ${className}`}>
-      {/* Connection Status Indicator */}
+      {/* Connection Status Indicator - More compact */}
       <div className="flex items-center gap-1">
         <div className={`w-2 h-2 rounded-full ${getStatusColor()}`} />
-        <span className="text-sm text-muted-foreground hidden sm:inline">
+        <span className="text-xs text-muted-foreground hidden md:inline">
           Gemini: {getStatusText()}
         </span>
       </div>
 
-      {/* Configuration Button */}
+      {/* Configuration Button - Smaller */}
       <Dialog open={isConfigOpen} onOpenChange={setIsConfigOpen}>
         <DialogTrigger asChild>
           <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Configure Gemini API">

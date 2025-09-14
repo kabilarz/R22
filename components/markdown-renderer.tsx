@@ -2,6 +2,7 @@
 
 import React from 'react'
 import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import { Button } from '@/components/ui/button'
@@ -39,6 +40,7 @@ export function MarkdownRenderer({ content, onRunCode }: MarkdownRendererProps) 
   return (
     <div className="prose prose-sm max-w-none dark:prose-invert overflow-hidden w-full">
       <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
         components={{
           code({ node, inline, className, children, ...props }: any) {
             const match = /language-(\w+)/.exec(className || '')
@@ -105,22 +107,22 @@ export function MarkdownRenderer({ content, onRunCode }: MarkdownRendererProps) 
             <h1 className="text-xl font-bold mb-3 mt-6">{children}</h1>
           ),
           h2: ({ children }) => (
-            <h2 className="text-lg font-semibold mb-2 mt-5">{children}</h2>
+            <h2 className="text-lg font-semibold mb-2 mt-5 !text-inherit">{children}</h2>
           ),
           h3: ({ children }) => (
-            <h3 className="text-base font-medium mb-2 mt-4">{children}</h3>
+            <h3 className="text-base font-medium mb-2 mt-4 !text-inherit">{children}</h3>
           ),
           p: ({ children }) => (
-            <p className="mb-3 leading-relaxed">{children}</p>
+            <p className="mb-3 leading-relaxed !text-inherit">{children}</p>
           ),
           ul: ({ children }) => (
-            <ul className="list-disc ml-4 mb-3 space-y-1">{children}</ul>
+            <ul className="list-disc ml-4 mb-3 space-y-1 !text-inherit">{children}</ul>
           ),
           ol: ({ children }) => (
-            <ol className="list-decimal ml-4 mb-3 space-y-1">{children}</ol>
+            <ol className="list-decimal ml-4 mb-3 space-y-1 !text-inherit">{children}</ol>
           ),
           li: ({ children }) => (
-            <li className="leading-relaxed">{children}</li>
+            <li className="leading-relaxed !text-inherit">{children}</li>
           ),
           blockquote: ({ children }) => (
             <blockquote className="border-l-4 border-primary/30 pl-4 py-2 my-4 bg-muted/50 italic">
@@ -128,10 +130,10 @@ export function MarkdownRenderer({ content, onRunCode }: MarkdownRendererProps) 
             </blockquote>
           ),
           strong: ({ children }) => (
-            <strong className="font-semibold text-foreground">{children}</strong>
+            <strong className="font-semibold !text-inherit">{children}</strong>
           ),
           em: ({ children }) => (
-            <em className="italic text-foreground">{children}</em>
+            <em className="italic !text-inherit">{children}</em>
           ),
           table: ({ children }) => (
             <div className="overflow-x-auto my-4">

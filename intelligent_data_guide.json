@@ -1,0 +1,60 @@
+{
+  "intelligent_data_understanding": {
+    "description": "The AI now intelligently analyzes your data before generating code",
+    "features": [
+      "Automatic data type detection (clinical trial, survey, longitudinal)",
+      "Medical domain identification (cardiology, biomarkers, etc.)",
+      "Data quality assessment with specific warnings",
+      "Context-aware analysis suggestions",
+      "Intelligent query routing (explanation vs code generation)"
+    ]
+  },
+  "query_types": {
+    "data_exploration": {
+      "triggers": [
+        "explain the data",
+        "what is this data",
+        "data overview",
+        "tell me about this dataset"
+      ],
+      "response": "Comprehensive data explanation with medical context and analysis suggestions"
+    },
+    "analysis_request": {
+      "triggers": [
+        "compare groups",
+        "analyze differences",
+        "test for significance"
+      ],
+      "response": "Statistical test suggestions with medical relevance"
+    },
+    "specific_analysis": {
+      "triggers": [
+        "show descriptive statistics",
+        "calculate correlation",
+        "plot histogram"
+      ],
+      "response": "Direct code generation for the requested analysis"
+    }
+  },
+  "medical_intelligence": {
+    "recognized_domains": [
+      "Cardiology/Hypertension (blood pressure, cardiac measures)",
+      "Laboratory Medicine (biomarkers, lab values)",
+      "Patient-Reported Outcomes (quality of life, satisfaction)",
+      "Demographics (age, gender, baseline characteristics)",
+      "Clinical Interventions (treatments, medications)"
+    ],
+    "intelligent_suggestions": [
+      "Blood pressure control analysis for hypertension data",
+      "Treatment efficacy analysis for clinical trials",
+      "Longitudinal analysis for time-series data",
+      "Subgroup analysis for demographic data"
+    ]
+  },
+  "best_practices": [
+    "Start with 'explain the data' for new datasets",
+    "Ask specific research questions after understanding the data",
+    "Use medical terminology for better context recognition",
+    "Follow suggested analysis workflows for optimal results"
+  ]
+}

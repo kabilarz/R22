@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -28,10 +28,13 @@ import {
   Table,
   HelpCircle,
   ExternalLink,
+  Brain
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { DocViewer } from '@/components/doc-viewer'
 import { apiClient } from '@/lib/api'
+import { longTermMemoryManager } from '@/lib/long-term-memory'
+import { HiddenPatternDiscoveryPanel } from '@/components/hidden-pattern-discovery-panel'
 
 // Tauri imports - handle potential environment differences
 let tauriApis: any = {}
@@ -122,6 +125,30 @@ export function DataPanel({
     return false
   })
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const memoryCleanupRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Memory cleanup for long-running sessions
+  useEffect(() => {
+    // Set up periodic memory cleanup every 5 minutes
+    const memoryCleanup = () => {
+      // Force garbage collection if available
+      if (global.gc) {
+        global.gc()
+      }
+      // Clear unused file data from memory
+      if (uploadedFiles.length > 10) {
+        console.log('Memory optimization: Large file list detected, consider cleanup')
+      }
+    }
+
+    memoryCleanupRef.current = setInterval(memoryCleanup, 5 * 60 * 1000) // 5 minutes
+    
+    return () => {
+      if (memoryCleanupRef.current) {
+        clearInterval(memoryCleanupRef.current)
+      }
+    }
+  }, [uploadedFiles.length])
 
   // Listen once for "open-doc" custom events (if you still use DocViewer buttons anywhere)
   useEffect(() => {
@@ -133,17 +160,57 @@ export function DataPanel({
     return () => window.removeEventListener('open-doc', handler)
   }, [])
 
-  const handleDragOver = (e: React.DragEvent) => {
+  const processFiles = useCallback(async (files: File[]) => {
+    if (!isBackendReady) {
+      toast.error('Backend is not ready. Please wait for initialization.')
+      return
+    }
+
+    for (const file of files) {
+      if (!file.name.match(/\.(csv|json|xlsx|xls)$/i)) {
+        toast.error(`Unsupported file type: ${file.name}`)
+        continue
+      }
+
+      try {
+        // Upload to backend first
+        const backendResult = await apiClient.uploadDataset(file)
+        
+        // Also parse locally for immediate display
+        const data = await parseFile(file)
+        
+        const uploadedFile: UploadedFile = {
+          id: Date.now().toString() + Math.random(),
+          name: file.name,
+          type: file.type || getFileTypeFromExtension(file.name),
+          size: file.size,
+          data,
+          uploadedAt: new Date(),
+          dataset_id: backendResult.dataset_id, // Store backend dataset ID
+        }
+
+        setUploadedFiles((prev: UploadedFile[]) => [...prev, uploadedFile])
+        longTermMemoryManager.trackFile() // Track file for memory management
+        toast.success(`File ${file.name} uploaded successfully`)
+      } catch (error) {
+        toast.error(
+          `Failed to process ${file.name}: ${error instanceof Error ? error.message : 'Unknown error'}`
+        )
+      }
+    }
+  }, [isBackendReady])
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault()
     setIsDragging(true)
-  }
+  }, [])
 
-  const handleDragLeave = (e: React.DragEvent) => {
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
     e.preventDefault()
     setIsDragging(false)
-  }
+  }, [])
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault()
     setIsDragging(false)
     
@@ -156,7 +223,7 @@ export function DataPanel({
       const files = Array.from(e.dataTransfer.files)
       processFiles(files)
     }
-  }
+  }, [processFiles])
 
   const handleFileSelect = async () => {
     // Check if we're running in Tauri
@@ -259,49 +326,11 @@ export function DataPanel({
         }
 
         setUploadedFiles((prev: UploadedFile[]) => [...prev, uploadedFile])
+        longTermMemoryManager.trackFile() // Track file for memory management
         toast.success(`File ${fileName} uploaded successfully`)
       } catch (error) {
         toast.error(
           `Failed to process ${fileName}: ${error instanceof Error ? error.message : 'Unknown error'}`
-        )
-      }
-    }
-  }
-
-  const processFiles = async (files: File[]) => {
-    if (!isBackendReady) {
-      toast.error('Backend is not ready. Please wait for initialization.')
-      return
-    }
-
-    for (const file of files) {
-      if (!file.name.match(/\.(csv|json|xlsx|xls)$/i)) {
-        toast.error(`Unsupported file type: ${file.name}`)
-        continue
-      }
-
-      try {
-        // Upload to backend first
-        const backendResult = await apiClient.uploadDataset(file)
-        
-        // Also parse locally for immediate display
-        const data = await parseFile(file)
-        
-        const uploadedFile: UploadedFile = {
-          id: Date.now().toString() + Math.random(),
-          name: file.name,
-          type: file.type || getFileTypeFromExtension(file.name),
-          size: file.size,
-          data,
-          uploadedAt: new Date(),
-          dataset_id: backendResult.dataset_id, // Store backend dataset ID
-        }
-
-        setUploadedFiles((prev: UploadedFile[]) => [...prev, uploadedFile])
-        toast.success(`File ${file.name} uploaded successfully`)
-      } catch (error) {
-        toast.error(
-          `Failed to process ${file.name}: ${error instanceof Error ? error.message : 'Unknown error'}`
         )
       }
     }
@@ -368,11 +397,21 @@ export function DataPanel({
     }
   }
 
-  const deleteFile = (fileId: string) => {
-    setUploadedFiles((prev: UploadedFile[]) => prev.filter((f) => f.id !== fileId))
+  const deleteFile = useCallback((fileId: string) => {
+    setUploadedFiles((prev: UploadedFile[]) => {
+      const filtered = prev.filter((f) => f.id !== fileId)
+      // Force garbage collection when deleting large files
+      setTimeout(() => {
+        if (global.gc) {
+          global.gc()
+        }
+      }, 100)
+      return filtered
+    })
+    longTermMemoryManager.removeFile() // Track file removal
     if (selectedFile?.id === fileId) setSelectedFile(null)
     toast.success('File deleted')
-  }
+  }, [selectedFile?.id, setUploadedFiles, setSelectedFile])
 
   const toggleTheme = () => {
     const newTheme = isDarkMode ? 'light' : 'dark'
@@ -501,14 +540,18 @@ export function DataPanel({
         />
       </div>
 
-      {/* Tabs (only Files visible here) */}
+      {/* Tabs */}
       <div className="flex-1 min-h-0 overflow-hidden">
         <Tabs defaultValue="files" className="flex-1 min-h-0 flex flex-col">
           <div className="px-6 pt-4">
-            <TabsList className="grid w-full grid-cols-1">
+            <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="files" className="flex items-center gap-2">
                 <FileText className="h-4 w-4" />
                 Files ({uploadedFiles.length})
+              </TabsTrigger>
+              <TabsTrigger value="discovery" className="flex items-center gap-2" disabled={!selectedFile?.dataset_id}>
+                <Brain className="h-4 w-4" />
+                Discovery
               </TabsTrigger>
             </TabsList>
           </div>
@@ -583,10 +626,27 @@ export function DataPanel({
               )}
             </ScrollArea>
           </TabsContent>
+
+          {/* Discovery Tab */}
+          <TabsContent value="discovery" className="flex-1 min-h-0 overflow-hidden">
+            <div className="h-full px-6 py-4">
+              {selectedFile?.dataset_id ? (
+                <HiddenPatternDiscoveryPanel datasetId={selectedFile.dataset_id} />
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-center">
+                  <Brain className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
+                  <h3 className="text-lg font-medium mb-1">Hidden Pattern Discovery</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Select a dataset to discover hidden patterns and insights
+                  </p>
+                </div>
+              )}
+            </div>
+          </TabsContent>
         </Tabs>
       </div>
 
-      {/* Docs modal (kept for your internal DocViewer flow if you use it elsewhere) */}
+      {/* Docs modal */}
       <DocViewer
         isOpen={!!currentDoc}
         onClose={() => setCurrentDoc(null)}

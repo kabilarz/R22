@@ -33,15 +33,41 @@ export function MemoryStatus({ selectedModel, onModelRecommendation }: MemorySta
   const [isLoading, setIsLoading] = useState(true)
   const [showSettings, setShowSettings] = useState(false)
   const [cachedModels, setCachedModels] = useState<Array<{ name: string; memoryUsed: number }>>([])
+  const [monitoringInterval, setMonitoringInterval] = useState(30000) // Start with 30 seconds
+  const [sessionStartTime] = useState(Date.now())
 
   useEffect(() => {
     loadMemoryStatus()
     
-    // Set up periodic monitoring
-    const interval = setInterval(loadMemoryStatus, 30000) // Every 30 seconds
+    // Adaptive monitoring: reduce frequency over time to prevent long-term lag
+    const setupMonitoring = () => {
+      const sessionTime = Date.now() - sessionStartTime
+      
+      // After 30 minutes, reduce monitoring to every 2 minutes
+      // After 2 hours, reduce to every 5 minutes
+      let interval = 30000 // 30 seconds
+      if (sessionTime > 2 * 60 * 60 * 1000) { // 2 hours
+        interval = 5 * 60 * 1000 // 5 minutes
+      } else if (sessionTime > 30 * 60 * 1000) { // 30 minutes
+        interval = 2 * 60 * 1000 // 2 minutes
+      }
+      
+      if (interval !== monitoringInterval) {
+        setMonitoringInterval(interval)
+        console.log(`🔧 Memory monitoring interval adjusted to ${interval/1000}s for long session`)
+      }
+      
+      return interval
+    }
     
-    return () => clearInterval(interval)
-  }, [])
+    const currentInterval = setupMonitoring()
+    const intervalId = setInterval(() => {
+      loadMemoryStatus()
+      setupMonitoring() // Re-evaluate interval
+    }, currentInterval)
+    
+    return () => clearInterval(intervalId)
+  }, [sessionStartTime, monitoringInterval])
 
   const loadMemoryStatus = async () => {
     try {

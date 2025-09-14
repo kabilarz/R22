@@ -299,11 +299,11 @@ export function ModelSelector({ selectedModel, onModelChange, onModelReady }: Mo
   }
 
   return (
-    <div className="flex items-center gap-2 min-w-0 flex-1">
-      {/* Model Selection */}
+    <div className="flex items-center gap-1 min-w-0 flex-1">
+      {/* Model Selection - Reduced width */}
       <Select value={selectedModel} onValueChange={onModelChange}>
-        <SelectTrigger className="w-full max-w-64 min-w-40">
-          <SelectValue placeholder="Select AI model" />
+        <SelectTrigger className="w-full max-w-40 min-w-32 text-sm h-8">
+          <SelectValue placeholder="AI Model" />
         </SelectTrigger>
         <SelectContent>
           {/* Local Models Section */}
@@ -314,7 +314,7 @@ export function ModelSelector({ selectedModel, onModelChange, onModelReady }: Mo
                 <SelectItem key={model} value={model}>
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-green-500 rounded-full" />
-                    <span>{model}</span>
+                    <span className="text-sm">{model}</span>
                     {hardware?.recommended_model === model && (
                       <Badge variant="secondary" className="text-xs">Recommended</Badge>
                     )}
@@ -330,7 +330,7 @@ export function ModelSelector({ selectedModel, onModelChange, onModelReady }: Mo
           <SelectItem value="gemini-1.5-flash">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 bg-blue-500 rounded-full" />
-              <span>Google Gemini (Cloud)</span>
+              <span className="text-sm">Google Gemini</span>
               <Badge variant="outline" className="text-xs">Fallback</Badge>
             </div>
           </SelectItem>
@@ -338,9 +338,9 @@ export function ModelSelector({ selectedModel, onModelChange, onModelReady }: Mo
       </Select>
 
       {/* Setup Button for Local Models - More compact */}
-      <Button variant="outline" size="sm" onClick={() => setIsSetupOpen(true)} className="flex items-center gap-1 flex-shrink-0">
-        <Info className="h-4 w-4" />
-        <span className="hidden sm:inline">Setup</span>
+      <Button variant="outline" size="sm" onClick={() => setIsSetupOpen(true)} className="flex items-center gap-1 flex-shrink-0 h-8 px-2">
+        <Info className="h-3 w-3" />
+        <span className="hidden sm:inline text-xs">Setup</span>
       </Button>
 
       {/* Gemini API Configuration - Make compact */}

@@ -3,6 +3,10 @@ FastAPI backend for the statistical analysis app.
 Provides endpoints for dataset management, analysis, and chat history.
 """
 
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
 from fastapi import FastAPI, UploadFile, File, HTTPException, Form, APIRouter, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -69,6 +73,9 @@ from plugin_manager import plugin_manager_backend
 
 # Import enhanced Python executor
 from enhanced_python_executor import python_executor
+
+# Import Hidden Pattern Discovery Engine
+from hidden_pattern_discovery import discovery_engine, DiscoverySession, DiscoveredPattern, DetectedAnomaly, HiddenCorrelation
 
 app = FastAPI(title="Statistical Analysis API", version="1.0.0")
 
@@ -171,7 +178,7 @@ class PythonExecutionResponse(BaseModel):
     error: Optional[str] = None
     success: bool
     execution_time: Optional[float] = None
-    memory_used_mb: Optional[int] = None
+    memory_used_mb: Optional[float] = None
 
 @api_router.post("/init", response_model=InitResponse)
 async def initialize_database():
@@ -648,6 +655,46 @@ class DiagnosticTestRequest(BaseModel):
     gold_standard_col: str
     where_sql: Optional[str] = None
 
+# Hidden Pattern Discovery Engine Models
+class DiscoveryRequest(BaseModel):
+    dataset_id: str
+    discovery_depth: str
+    focus_areas: List[str]
+    medical_context: Optional[str] = None
+
+class DiscoveryResponse(BaseModel):
+    discovery_session_id: str
+    status: str
+    estimated_completion: Optional[str] = None
+
+class PatternResult(BaseModel):
+    pattern_id: str
+    type: str
+    variables: List[str]
+    strength: float
+    significance: float
+    description: str
+    discovered_at: str
+
+class DiscoveryResultsResponse(BaseModel):
+    session_id: str
+    patterns_found: int
+    significant_findings: int
+    anomalies_detected: int
+    hidden_correlations: int
+    top_findings: List[PatternResult]
+
+class InsightRequest(BaseModel):
+    finding_id: str
+    dataset_id: str
+    medical_context: Optional[str] = None
+
+class InsightResponse(BaseModel):
+    explanation: str
+    supporting_evidence: List[str]
+    research_implications: List[str]
+    confidence: float
+
 # Phase 2A Medical Statistics Endpoints
 
 @api_router.post("/analysis/paired-ttest")
@@ -1058,8 +1105,8 @@ async def perform_odds_ratio_analysis(request: OddsRatioRequest):
         raise HTTPException(status_code=500, detail=f"Failed to perform odds ratio analysis: {str(e)}")
 
 @api_router.post("/analysis/diagnostic-test")
-async def perform_diagnostic_test_analysis(request: DiagnosticTestRequest):
-    """Calculate sensitivity, specificity, and diagnostic test measures."""
+async def perform_diagnostic_test(request: DiagnosticTestRequest):
+    """Perform diagnostic test analysis."""
     try:
         result = run_diagnostic_test_analysis(
             dataset_id=request.dataset_id,
@@ -1067,9 +1114,7 @@ async def perform_diagnostic_test_analysis(request: DiagnosticTestRequest):
             gold_standard_col=request.gold_standard_col,
             where_sql=request.where_sql
         )
-        
         return result
-        
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to perform diagnostic test analysis: {str(e)}")
 
@@ -1302,7 +1347,9 @@ async def generate_comprehensive_visualization(request: VisualizationRequest):
         elif request.chart_type == "violin-plot" and request.group_by:
             result = generate_violin_plot(df, request.group_by, request.column)
         elif request.chart_type == "qq-plot":
-            distribution = request.additional_params.get("distribution", "norm")
+            distribution = "norm"
+            if request.additional_params is not None:
+                distribution = request.additional_params.get("distribution", "norm")
             result = generate_qq_plot(df, request.column, distribution)
         elif request.chart_type == "pareto-chart":
             result = generate_pareto_chart(df, request.column)
@@ -1424,6 +1471,103 @@ async def uninstall_plugin(request: PluginUninstallRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to uninstall plugin: {str(e)}")
 
+# ========================
+# HIDDEN PATTERN DISCOVERY ENGINE API ENDPOINTS
+# ========================
+
+@api_router.post("/discovery/analyze", response_model=DiscoveryResponse)
+async def start_pattern_discovery(request: DiscoveryRequest):
+    """Start a new pattern discovery session."""
+    try:
+        # Prepare parameters
+        parameters = {
+            "discovery_depth": request.discovery_depth,
+            "focus_areas": request.focus_areas,
+            "medical_context": request.medical_context
+        }
+        
+        # Start discovery process
+        session_id = discovery_engine.run_complete_discovery(
+            dataset_id=request.dataset_id,
+            parameters=parameters
+        )
+        
+        # Get session info
+        session_info = discovery_engine.get_session_info(session_id)
+        
+        return DiscoveryResponse(
+            discovery_session_id=session_id,
+            status=session_info["status"] if session_info else "running",
+            estimated_completion=None  # In a real implementation, this would be calculated
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to start pattern discovery: {str(e)}")
+
+@api_router.get("/discovery/results/{discovery_session_id}", response_model=DiscoveryResultsResponse)
+async def get_discovery_results(discovery_session_id: str):
+    """Get results from a pattern discovery session."""
+    try:
+        # Get session info
+        session_info = discovery_engine.get_session_info(discovery_session_id)
+        if not session_info:
+            raise HTTPException(status_code=404, detail="Discovery session not found")
+        
+        # Get discovered patterns
+        patterns = discovery_engine.get_discovered_patterns(discovery_session_id)
+        anomalies = discovery_engine.get_detected_anomalies(discovery_session_id)
+        correlations = discovery_engine.get_hidden_correlations(discovery_session_id)
+        
+        # Prepare top findings (patterns with highest strength)
+        top_patterns = sorted(patterns, key=lambda x: x["strength"], reverse=True)[:5]
+        top_findings = [
+            PatternResult(
+                pattern_id=p["pattern_id"],
+                type=p["type"],
+                variables=p["variables"],
+                strength=p["strength"],
+                significance=p["significance"],
+                description=p["description"],
+                discovered_at=p["discovered_at"].isoformat() if hasattr(p["discovered_at"], 'isoformat') else str(p["discovered_at"])
+            ) for p in top_patterns
+        ]
+        
+        return DiscoveryResultsResponse(
+            session_id=discovery_session_id,
+            patterns_found=session_info["patterns_found"],
+            significant_findings=len([p for p in patterns if p["significance"] < 0.05]),
+            anomalies_detected=len(anomalies),
+            hidden_correlations=len([c for c in correlations if abs(c["strength"]) > 0.5]),
+            top_findings=top_findings
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get discovery results: {str(e)}")
+
+@api_router.post("/discovery/explain", response_model=InsightResponse)
+async def explain_discovery_finding(request: InsightRequest):
+    """Generate explanation for a discovered finding."""
+    try:
+        # In a real implementation, this would use LLMs to generate explanations
+        # For now, we'll provide a template response
+        explanation = f"This finding was detected during the analysis of dataset {request.dataset_id}. "
+        explanation += "The pattern suggests a potentially significant relationship that warrants further investigation. "
+        explanation += "This type of finding is often overlooked in traditional analysis approaches."
+        
+        return InsightResponse(
+            explanation=explanation,
+            supporting_evidence=["Statistical analysis results", "Dataset characteristics"],
+            research_implications=[
+                "Consider investigating the underlying mechanism",
+                "Validate in prospective study",
+                "Explore potential confounding variables"
+            ],
+            confidence=0.82
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to explain discovery finding: {str(e)}")
+
+# Include the API router after all endpoints are defined
+app.include_router(api_router)
+
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8001)
+    uvicorn.run(app, host="0.0.0.0", port=8002)

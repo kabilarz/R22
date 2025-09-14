@@ -37,6 +37,8 @@ export class MemoryOptimizer {
   private modelCache = new Map<string, any>()
   private lastMemoryCheck = 0
   private memoryCheckInterval = 30000 // 30 seconds
+  private longTermCleanupInterval = 5 * 60 * 1000 // 5 minutes
+  private lastLongTermCleanup = 0
   private optimizationSettings: OptimizationSettings = {
     enableGarbageCollection: true,
     useMemoryMapping: true,
@@ -91,10 +93,16 @@ export class MemoryOptimizer {
   }
 
   /**
-   * Get current memory profile
+   * Get current memory profile with long-term cleanup
    */
   async getMemoryProfile(): Promise<MemoryProfile> {
     const now = Date.now()
+    
+    // Perform long-term cleanup every 5 minutes
+    if (now - this.lastLongTermCleanup > this.longTermCleanupInterval) {
+      await this.performLongTermCleanup()
+      this.lastLongTermCleanup = now
+    }
     
     // Return cached profile if recent
     if (this.memoryProfile && (now - this.lastMemoryCheck) < this.memoryCheckInterval) {
@@ -279,6 +287,36 @@ export class MemoryOptimizer {
     }
     
     console.log('Model cache cleared')
+  }
+
+  /**
+   * Perform comprehensive long-term memory cleanup
+   */
+  private async performLongTermCleanup(): Promise<void> {
+    console.log('🧹 Performing long-term memory cleanup...')
+    
+    // 1. Clear old cached models (older than 10 minutes)
+    const tenMinutesAgo = Date.now() - (10 * 60 * 1000)
+    for (const [modelName, info] of this.modelCache.entries()) {
+      if (info.loadedAt < tenMinutesAgo) {
+        this.modelCache.delete(modelName)
+        console.log(`Cleaned up old cached model: ${modelName}`)
+      }
+    }
+    
+    // 2. Reset memory profile to force fresh check
+    this.memoryProfile = null
+    
+    // 3. Force garbage collection if enabled
+    if (this.optimizationSettings.enableGarbageCollection && global.gc) {
+      global.gc()
+      console.log('Forced garbage collection')
+    }
+    
+    // 4. Clear any accumulated optimization overhead
+    this.lastMemoryCheck = 0
+    
+    console.log('✅ Long-term memory cleanup completed')
   }
 
   /**

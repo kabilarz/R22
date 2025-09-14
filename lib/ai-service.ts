@@ -6,6 +6,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { ollamaClient } from './ollama-client'
 import { memoryOptimizer } from './memory-optimizer'
+import { dataContextAnalyzer, DataContext, AnalysisSuggestion } from './data-context-analyzer'
 import { testSuggestionEngine, TestSuggestion, SuggestionQuery } from './test-suggestion-engine'
 
 export type ModelType = 'local' | 'cloud'
@@ -16,10 +17,12 @@ export interface AIMessage {
 }
 
 export interface AnalysisResponse {
-  type: 'suggestions' | 'code'
+  type: 'explanation' | 'suggestions' | 'code'
   suggestions?: TestSuggestion[]
+  analysisSuggestions?: AnalysisSuggestion[]
   code?: string
   explanation?: string
+  dataContext?: DataContext
 }
 
 export class AIService {
@@ -66,10 +69,53 @@ export class AIService {
   }
 
   /**
-   * Generate analysis suggestions or code based on query
+   * Enhanced analysis response with intelligent data understanding
    */
   async generateAnalysisResponse(modelName: string, query: string, dataContext: string, selectedFile?: any): Promise<AnalysisResponse> {
-    // First, try to suggest appropriate statistical tests
+    console.log('🔍 AI Service: Processing query:', query)
+    console.log('📁 AI Service: Selected file:', selectedFile?.name)
+    console.log('📊 AI Service: File data length:', selectedFile?.data?.length)
+    
+    // First-time data analysis: explain the dataset
+    const isExplorationQuery = selectedFile && this.isDataExplorationQuery(query)
+    console.log('🤔 AI Service: Is data exploration query?', isExplorationQuery)
+    
+    if (isExplorationQuery) {
+      console.log('✅ AI Service: Detected data exploration query, analyzing dataset...')
+      try {
+        console.log('🔬 AI Service: Starting data context analysis...')
+        const context = dataContextAnalyzer.analyzeDataset(selectedFile.data, selectedFile.name)
+        console.log('📋 AI Service: Data context generated:', context)
+        
+        console.log('📝 AI Service: Generating explanation...')
+        const explanation = dataContextAnalyzer.generateDataExplanation(context)
+        console.log('💡 AI Service: Generating suggestions...')
+        const suggestions = dataContextAnalyzer.generateAnalysisSuggestions(context)
+        
+        console.log('✨ AI Service: Generated data explanation successfully')
+        console.log('📄 AI Service: Explanation length:', explanation.length)
+        console.log('💭 AI Service: Number of suggestions:', suggestions.length)
+        
+        return {
+          type: 'explanation',
+          explanation: explanation + "\n\n**What would you like to analyze?** Please let me know your specific research question, and I'll help you choose the appropriate analysis method.",
+          dataContext: context,
+          analysisSuggestions: suggestions
+        }
+      } catch (error) {
+        console.error('❌ AI Service: Data context analysis failed:', error)
+        console.error('❌ AI Service: Error details:', error.stack)
+        // Still try to provide a basic explanation
+        const basicExplanation = `## 📊 Dataset Overview: ${selectedFile.name}\n\nThis dataset contains **${selectedFile.data.length} records** with **${Object.keys(selectedFile.data[0] || {}).length} variables**.\n\nColumns: ${Object.keys(selectedFile.data[0] || {}).join(', ')}\n\n**What would you like to analyze?**`
+        console.log('🔄 AI Service: Using fallback explanation')
+        return {
+          type: 'explanation',
+          explanation: basicExplanation
+        }
+      }
+    }
+    
+    // Try to suggest appropriate statistical tests
     if (selectedFile && this.shouldSuggestTests(query)) {
       try {
         const suggestionQuery: SuggestionQuery = {
@@ -191,7 +237,21 @@ export class AIService {
    * Build analysis prompt for medical data
    */
   private buildAnalysisPrompt(userQuery: string, dataContext: string): string {
-    return `You are a medical data analysis assistant. Generate Python pandas code to analyze the given dataset.
+    return `You are a medical data analysis assistant. Before generating any code, FIRST provide a clear explanation of what analysis you will perform and why.
+
+Start your response with a brief explanation section like this:
+## 📊 Analysis Plan
+
+**What we're going to do:**
+[Explain the specific analysis in 2-3 sentences]
+
+**Why this analysis matters:**
+[Explain the medical/clinical significance]
+
+**Statistical tests we'll use:**
+[List the specific statistical methods]
+
+Then provide the Python code.
 
 IMPORTANT: The DataFrame 'df' is already loaded from DuckDB - DO NOT use pd.read_csv() or any file reading commands!
 
@@ -201,9 +261,10 @@ ${dataContext}
 User Question: ${userQuery}
 
 Please provide:
-1. Clean, executable pandas code
-2. Brief explanation of the analysis
-3. Any important medical insights
+1. Clear explanation of the analysis plan (as described above)
+2. Clean, executable pandas code
+3. Brief interpretation of expected results
+4. Medical insights and clinical relevance
 
 CRITICAL REQUIREMENTS:
 - The variable 'df' is already available - DO NOT read files with pd.read_csv()
@@ -217,39 +278,27 @@ CRITICAL REQUIREMENTS:
 - For plots: ensure data length matches - use df.groupby() for summary data
 - Avoid length mismatches in plotting by using aggregated data
 
-EXAMPLE CORRECT CODE:
+EXAMPLE CORRECT RESPONSE FORMAT:
+## 📊 Analysis Plan
+
+**What we're going to do:**
+We'll compare blood pressure changes between treatment groups using t-tests and visualizations to assess treatment effectiveness.
+
+**Why this analysis matters:**
+This helps determine if the new treatment significantly reduces blood pressure compared to standard care, which is crucial for regulatory approval.
+
+**Statistical tests we'll use:**
+- Independent samples t-test for group comparisons
+- Descriptive statistics for baseline characteristics
+- Box plots for visual comparison
+
+## 🐍 Python Code
+
+\`\`\`python
 # df is already loaded - just use it!
 print("Dataset shape:", df.shape)
-
-# Always check for numeric columns first
-numeric_cols = df.select_dtypes(include=['number']).columns
-if len(numeric_cols) > 0:
-    print("Numeric columns:", list(numeric_cols))
-    print(df[numeric_cols].describe())
-else:
-    print("No numeric columns found")
-
-# For T-tests, ensure columns are numeric
-if 'age' in df.columns:
-    df['age'] = pd.to_numeric(df['age'], errors='coerce')
-    print(f"Age column type: {df['age'].dtype}")
-
-# For plotting, use grouped/aggregated data to avoid length mismatches
-import matplotlib.pyplot as plt
-if 'treatment_group' in df.columns and 'age' in df.columns:
-    # Correct: aggregate data first
-    age_by_treatment = df.groupby('treatment_group')['age'].mean()
-    plt.bar(age_by_treatment.index, age_by_treatment.values)
-    plt.title('Mean Age by Treatment Group')
-    plt.show()
-
-# Show data types
-print("\nData types:")
-print(df.dtypes)
-
-EXAMPLE WRONG CODE:
-# ❌ NEVER DO THIS - df is already provided
-df = pd.read_csv('file.csv')  # This will fail!
+# ... rest of analysis code
+\`\`\`
 
 Python Code:`
   }
@@ -411,6 +460,54 @@ Python Code:`
 
   /**
    * Determine if query should trigger test suggestions
+   */
+  /**
+   * Check if user is asking for data exploration/explanation
+   */
+  private isDataExplorationQuery(query: string): boolean {
+    const explorationKeywords = [
+      'explain the data', 'describe the data', 'what is this data',
+      'data overview', 'dataset summary', 'show me the data',
+      'what do we have', 'data exploration', 'understand the data',
+      'tell me about', 'overview of', 'summary of', 'explain data',
+      'can you explain', 'what does this', 'describe this',
+      'what kind of data', 'analyze the data', 'look at the data',
+      'suggest me what i can analyze', 'what can i analyze',
+      'suggest analysis', 'analysis suggestions', 'what should i analyze',
+      'analysis options', 'what analyses', 'analysis recommendations'
+    ]
+    
+    const lowerQuery = query.toLowerCase().trim()
+    console.log('🔍 Query Detection: Input query:', `"${query}"`)
+    console.log('🔍 Query Detection: Normalized query:', `"${lowerQuery}"`)
+    
+    let matchedKeyword = null
+    const isExploration = explorationKeywords.some(keyword => {
+      const matches = lowerQuery.includes(keyword)
+      if (matches) {
+        matchedKeyword = keyword
+      }
+      return matches
+    })
+    
+    console.log('🔍 Query Detection: Matched keyword:', matchedKeyword)
+    console.log('🔍 Query Detection: Is data exploration query:', isExploration)
+    
+    // Additional exact phrase matching for debugging
+    if (!isExploration) {
+      console.log('🔍 Query Detection: Testing exact phrases...')
+      const exactPhrases = ['explain the data', 'describe the data', 'can you explain', 'suggest me what i can analyze']
+      exactPhrases.forEach(phrase => {
+        const exactMatch = lowerQuery === phrase
+        console.log(`🔍 Query Detection: "${lowerQuery}" === "${phrase}"?`, exactMatch)
+      })
+    }
+    
+    return isExploration
+  }
+
+  /**
+   * Check if query should trigger test suggestions
    */
   private shouldSuggestTests(query: string): boolean {
     const lowerQuery = query.toLowerCase()

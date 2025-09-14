@@ -89,6 +89,65 @@ def init_store() -> None:
             )
         """)
         
+        # Create discovery_sessions table for Hidden Pattern Discovery Engine
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS discovery_sessions (
+                session_id TEXT PRIMARY KEY,
+                dataset_id TEXT NOT NULL,
+                parameters JSON,
+                status TEXT DEFAULT 'pending',
+                started_at TIMESTAMP DEFAULT now(),
+                completed_at TIMESTAMP,
+                patterns_found INTEGER DEFAULT 0,
+                FOREIGN KEY (dataset_id) REFERENCES datasets(dataset_id)
+            )
+        """)
+        
+        # Create discovered_patterns table for Hidden Pattern Discovery Engine
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS discovered_patterns (
+                pattern_id TEXT PRIMARY KEY,
+                session_id TEXT NOT NULL,
+                type TEXT NOT NULL,
+                variables JSON,
+                strength DECIMAL(5,4),
+                significance DECIMAL(5,4),
+                description TEXT,
+                discovered_at TIMESTAMP DEFAULT now(),
+                FOREIGN KEY (session_id) REFERENCES discovery_sessions(session_id)
+            )
+        """)
+        
+        # Create detected_anomalies table for Hidden Pattern Discovery Engine
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS detected_anomalies (
+                anomaly_id TEXT PRIMARY KEY,
+                session_id TEXT NOT NULL,
+                data_point_id TEXT,
+                variables JSON,
+                deviation_score DECIMAL(5,4),
+                medical_significance TEXT,
+                detected_at TIMESTAMP DEFAULT now(),
+                FOREIGN KEY (session_id) REFERENCES discovery_sessions(session_id)
+            )
+        """)
+        
+        # Create hidden_correlations table for Hidden Pattern Discovery Engine
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS hidden_correlations (
+                correlation_id TEXT PRIMARY KEY,
+                session_id TEXT NOT NULL,
+                variable_a TEXT,
+                variable_b TEXT,
+                correlation_type TEXT,
+                strength DECIMAL(5,4),
+                p_value DECIMAL(5,4),
+                explanation TEXT,
+                discovered_at TIMESTAMP DEFAULT now(),
+                FOREIGN KEY (session_id) REFERENCES discovery_sessions(session_id)
+            )
+        """)
+        
         print("Database initialized successfully")
         
     finally:
